@@ -7,6 +7,10 @@ from machine import Pin
 VERSION = "0.0.1"
 
 class PicoDepartureBoard:
+
+    WIFI_MINIMUM_CONNECTION_ATTEMPTS = 5
+    WIFI_MAXIMUM_CONNECTION_ATTEMPTS = 60
+
     def __init__(self):
         self.status_led = Pin("LED", Pin.OUT)
         self.status_led.value(True)
@@ -54,9 +58,8 @@ class PicoDepartureBoard:
         wlan.connect(ssid, password)
 
         connection_attempt = 0
-        max_attempts = 60
-        while connection_attempt < max_attempts:
-            if connection_attempt > 5 and (wlan.status() < 0 or wlan.status() >= 3):
+        while connection_attempt < self.WIFI_MAXIMUM_CONNECTION_ATTEMPTS:
+            if connection_attempt > self.WIFI_MINIMUM_CONNECTION_ATTEMPTS and (wlan.status() < 0 or wlan.status() >= 3):
                 break
             connection_attempt += 1
 
