@@ -52,7 +52,9 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 
 ## Future ideas
 
-- The OLED has two built in buttons, we could use these to cycle through different stations, or different views (departures, arrivals, etc.)
+- It'll need a 3d printed case
+- It could be battery powered and portable or even wearable
+- Need to find a way to display calling stations
 
 ## License
 
