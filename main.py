@@ -33,7 +33,7 @@ class PicoDepartureBoard:
             self.station_code = api_creds["station_code"].upper()
             self.station_name = api_creds["station_name"]
 
-        self.show_clock = False
+        self.show_clock = True
 
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
@@ -289,6 +289,9 @@ class PicoDepartureBoard:
         offset = 0
         last_fetch = 0
 
+        key_a = Pin(15, Pin.IN, Pin.PULL_UP)
+        key_b = Pin(17, Pin.IN, Pin.PULL_UP)
+
         while True:
             # Refresh data periodically
             now = time.time()
@@ -305,6 +308,16 @@ class PicoDepartureBoard:
                     print("Failed to fetch data, retrying...")
 
                 last_fetch = now
+                self.render_departures(services, offset)
+
+            if key_a.value() == 0:
+                self.show_clock = not self.show_clock
+                self.render_departures(services, offset)
+
+            if key_b.value() == 0:
+                offset += 1
+                if offset >= len(services):
+                    offset = 0
                 self.render_departures(services, offset)
 
 
