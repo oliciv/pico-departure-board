@@ -95,12 +95,24 @@ class PicoDepartureBoard:
         
         time.sleep(5)
     def _truncate_destination(self, dest, max_chars):
+        # remove vowels and spaces from everything except the last char
+        # (e.g. "London Waterloo" -> "Lndn Wtrlo" makes more sense than "Lndn Wtrl")
+        # Uppercase vowels are assumed significant, e.g. "Aberystwyth" we'd not want to end up with "brstwyth"
+        core, last = dest[:-1], dest[-1]
+        core = ''.join(c for c in core if c not in 'aeiou ')
+
+        # combine first
+        dest = core + last
+
+        # truncate while preserving last character if it's a vowel
         if len(dest) > max_chars:
-            # remove vowels, then spaces, then truncate
-            dest = dest.replace("a", "").replace("e", "").replace("i", "").replace("o", "").replace("u", "")
-            dest = dest.replace(" ", "")
-            if len(dest) > max_chars:
-                dest = dest[:max_chars - 1] + "."
+            if last.lower() in 'aeiou':
+                # keep last vowel, truncate core only
+                dest = dest[:max_chars-1] + last
+            else:
+                # truncate normally
+                dest = dest[:max_chars-1] + "."
+
         return dest
 
     def render_departures(self, services, offset=0):
