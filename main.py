@@ -33,6 +33,8 @@ class PicoDepartureBoard:
             self.station_code = api_creds["station_code"].upper()
             self.station_name = api_creds["station_name"]
 
+        self.show_clock = False
+
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
 
@@ -226,8 +228,10 @@ class PicoDepartureBoard:
             self.oled.show()
             return
 
-        # Show up to 3 services, that's all we can fit!
-        for i in range(3):
+        num_rows = 2 if self.show_clock else 3
+        row_spacing = 20 if self.show_clock else 21
+
+        for i in range(num_rows):
             idx = offset + i
             if idx >= len(services):
                 break
@@ -243,7 +247,6 @@ class PicoDepartureBoard:
             dest = ""
             if service.get("destination"):
                 dest = service["destination"][0].get("locationName", "")
-            # Truncate destination: 5 chars time + space + dest + space + etd
             # At 8px per char, 128px = 16 chars max
             # Time takes 6 chars ("HH:MM" plus a space)
 
@@ -251,21 +254,31 @@ class PicoDepartureBoard:
             if len(dest) > max_dest_chars:
                 dest = self._truncate_destination(dest, max_dest_chars)
 
-            y = 5 + (i * 21)
+            y = 2 + (i * row_spacing)
             line_text = f"{std} {dest}"
             self.oled.text(line_text, 1, y, self.oled.white)
 
             if etd:
-                self.oled.text(etd, 1, y + 8, self.oled.white)
+                self.oled.text(etd, 1, y + 10, self.oled.white)
 
             if platform:
                 platform_str = f"Plat {platform}"
                 self.oled.text(
                     f"{platform_str}",
                     128 - len(f"{platform_str}") * 8,
-                    y + 8,
+                    y + 10,
                     self.oled.white,
                 )
+
+        if self.show_clock:
+            # Separator line
+            self.oled.hline(0, 44, 128, self.oled.white)
+
+            # Centered clock at the bottom
+            current_time = self._get_current_time()
+            time_width = len(current_time) * 8
+            time_x = (128 - time_width) // 2
+            self.oled.text(current_time, time_x, 50, self.oled.white)
 
         self.oled.show()
 
