@@ -42,3 +42,7 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 
 - Raspberry Pi Pico W
 - Waveshare 1.3inch OLED HAT (128x64)
+
+## Future ideas
+
+- The OLED has two built in buttons, we could use these to cycle through different stations, or different views (departures, arrivals, etc.)
