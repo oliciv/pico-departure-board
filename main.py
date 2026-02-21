@@ -166,6 +166,20 @@ class PicoDepartureBoard:
         t = time.localtime()
         return "{:02d}:{:02d}".format(t[3], t[4])
 
+    def _format_etd(self, etd, std):
+        # estimated: "On time", "Delayed", or "HH:MM"
+        if etd not in (std, "On time") and all(":" in t for t in (etd, std)):
+            # convert HH:MM to minutes to display minutes delayed
+            std_h, std_m = map(int, std.split(":"))
+            etd_h, etd_m = map(int, etd.split(":"))
+            
+            std_total = std_h * 60 + std_m
+            etd_total = etd_h * 60 + etd_m
+            
+            diff = etd_total - std_total
+            return f"+{diff} mins"
+        return etd
+
     def render_departures(self, services, offset=0):
         self.oled.fill(self.oled.black)
 
@@ -184,7 +198,9 @@ class PicoDepartureBoard:
 
             service = services[idx]
             std = service.get("std", "??:??")       # scheduled time of departure
-            etd = service.get("etd", "")            # estimated: "On time", "Delayed", or "HH:MM"
+
+            etd = self._format_etd(service.get("etd", ""), std)
+
             platform = service.get("platform", "")
 
             # Get destination name, truncate to fit
