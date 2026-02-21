@@ -46,3 +46,9 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 ## Future ideas
 
 - The OLED has two built in buttons, we could use these to cycle through different stations, or different views (departures, arrivals, etc.)
+
+## License
+
+This project is licensed under the terms of the GNU General Public License v3.0. It includes code from the following sources:
+
+- [Waveshare Pico_code](https://github.com/waveshare/Pico_code/blob/main/Python/Pico-OLED-1.3/Pico-OLED-1.3(spi).py) - GPL-3.0
