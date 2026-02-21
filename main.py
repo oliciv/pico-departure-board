@@ -18,6 +18,9 @@ if __name__=='__main__':
 
     # Dimensions: 128 x 64, so 127, 63 are the max values
     
+    OLED.text("PDB", 5, 5, OLED.white)
+    OLED.text(VERSION, 128 - 5 - len(VERSION) * 8, 64 - 10, OLED.white)
+
     # top
     OLED.line(40, 22, 87, 22, OLED.white)
     # OLED.line(40, 21, 87, 21, OLED.white)
