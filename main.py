@@ -38,6 +38,9 @@ if __name__=='__main__':
 
     time.sleep(3)
 
+    OLED.fill(OLED.black)
+    OLED.show()
+
     with open("wifi.json", "r") as wifi_json_fp:
         wifi_creds = json.load(wifi_json_fp)
         ssid = wifi_creds["ssid"]
@@ -48,28 +51,29 @@ if __name__=='__main__':
     wlan.active(True)
     wlan.connect(ssid, password)
 
-    # Wait for connect or fail
-    max_wait = 10
-    while max_wait > 0:
-        if wlan.status() < 0 or wlan.status() >= 3:
+    connection_attempt = 0
+    max_attempts = 60
+    while connection_attempt < max_attempts:
+        if connection_attempt > 5 and (wlan.status() < 0 or wlan.status() >= 3):
             break
-        max_wait -= 1
+        connection_attempt += 1
 
         OLED.fill(OLED.black)
         OLED.text("Connecting to",1,10,OLED.white)
         OLED.text(ssid,1,27,OLED.white)
-        OLED.text(f"Attempt {10 - max_wait}",1,44,OLED.white)
+        OLED.text(f"Attempt {connection_attempt}",1,44,OLED.white)
         OLED.show()
+        status_led.toggle()
 
         time.sleep(1)
-        status_led.value(not status_led.value())
     
-    if wlan.status() < 0 or wlan.status() >= 3:
-        OLED.fill(OLED.black)
-        OLED.text("No WiFi",1,10,OLED.white)
-        OLED.text(f"Attempt {10 - max_wait}",1,27,OLED.white)
+    OLED.fill(OLED.black)
+
+    if wlan.status() < 0:
+        OLED.text("WiFi Error",1,10,OLED.white)
+        OLED.text(f"Attempt {connection_attempt}",1,27,OLED.white)
+        OLED.text(f"Status: {wlan.status()}",1,44,OLED.white)
         OLED.show()
-        # we should end it here, unrecoverable
         raise Exception("Connection failed")
 
     OLED.text("Pico Depature",1,10,OLED.white)
