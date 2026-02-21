@@ -2,13 +2,13 @@ import json
 import network
 import ntptime
 import time
-import ubinascii
 import gc
 from oled_lib import OLED_1inch3
 from machine import Pin
-import urequests 
+import urequests
 
 VERSION = "0.0.1"
+
 
 class PicoDepartureBoard:
 
@@ -35,7 +35,7 @@ class PicoDepartureBoard:
 
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
-        
+
         self.oled.text("PDB", 5, 5, self.oled.white)
         self.oled.text(VERSION, 128 - 5 - len(VERSION) * 8, 64 - 10, self.oled.white)
 
@@ -72,56 +72,86 @@ class PicoDepartureBoard:
 
         connection_attempt = 0
         while connection_attempt < self.WIFI_MAXIMUM_CONNECTION_ATTEMPTS:
-            if connection_attempt > self.WIFI_MINIMUM_CONNECTION_ATTEMPTS and (wlan.status() < 0 or wlan.status() >= 3):
+            if connection_attempt > self.WIFI_MINIMUM_CONNECTION_ATTEMPTS and (
+                wlan.status() < 0 or wlan.status() >= 3
+            ):
                 break
             connection_attempt += 1
 
             self.oled.fill(self.oled.black)
-            self.oled.text("Connecting to",1,10,self.oled.white)
-            self.oled.text(ssid,1,27,self.oled.white)
-            self.oled.text(f"Attempt {connection_attempt}",1,44,self.oled.white)
+            self.oled.text("Connecting to", 1, 10, self.oled.white)
+            self.oled.text(ssid, 1, 27, self.oled.white)
+            self.oled.text(f"Attempt {connection_attempt}", 1, 44, self.oled.white)
             self.oled.show()
             self.status_led.toggle()
 
             time.sleep(1)
-        
+
         self.oled.fill(self.oled.black)
 
         if wlan.status() < 0:
-            self.oled.text("WiFi Error",1,10,self.oled.white)
-            self.oled.text(f"Attempt {connection_attempt}",1,27,self.oled.white)
-            self.oled.text(f"Status: {wlan.status()}",1,44,self.oled.white)
+            self.oled.text("WiFi Error", 1, 10, self.oled.white)
+            self.oled.text(f"Attempt {connection_attempt}", 1, 27, self.oled.white)
+            self.oled.text(f"Status: {wlan.status()}", 1, 44, self.oled.white)
             self.oled.show()
             raise Exception("Connection failed")
 
-        self.oled.text("Pico Depature",1,10,self.oled.white)
-        self.oled.text(f"Board v{VERSION}",1,27,self.oled.white)
-        self.oled.text(wlan.ifconfig()[0],1,44,self.oled.white)
+        self.oled.text("Pico Depature", 1, 10, self.oled.white)
+        self.oled.text(f"Board v{VERSION}", 1, 27, self.oled.white)
+        self.oled.text(wlan.ifconfig()[0], 1, 44, self.oled.white)
         self.oled.show()
-        
+
         time.sleep(5)
-        self.oled.fill(self.oled.black) 
+        self.oled.fill(self.oled.black)
 
     def fetch_departures_demo(self):
         return {
             "trainServices": [
-            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}], "platform": "1"},
-            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}], "platform": "285"},
-            {"std": "14:40", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}], "platform": "3"},
-            {"std": "15:10", "etd": "On time", "destination": [{"locationName": "Glasgow Central"}], "platform": "4"},
-            {"std": "16:30", "etd": "On time", "destination": [{"locationName": "Manchester Piccadilly"}], "platform": "5"},
-        ]
+                {
+                    "std": "12:00",
+                    "etd": "On time",
+                    "destination": [{"locationName": "London Waterloo"}],
+                    "platform": "1",
+                },
+                {
+                    "std": "13:20",
+                    "etd": "DLY",
+                    "destination": [{"locationName": "Brighton"}],
+                    "platform": "285",
+                },
+                {
+                    "std": "14:40",
+                    "etd": "CNX",
+                    "destination": [
+                        {"locationName": "Rhoose Cardiff International Airport"}
+                    ],
+                    "platform": "3",
+                },
+                {
+                    "std": "15:10",
+                    "etd": "On time",
+                    "destination": [{"locationName": "Glasgow Central"}],
+                    "platform": "4",
+                },
+                {
+                    "std": "16:30",
+                    "etd": "On time",
+                    "destination": [{"locationName": "Manchester Piccadilly"}],
+                    "platform": "5",
+                },
+            ]
         }
 
     def fetch_departures(self, num_rows=3):
         # return self.fetch_departures_demo()
 
-        url = f"{self.proxy_url}/departures/{self.station_code}?accessToken={self.api_token}"
+        url = (
+            f"{self.proxy_url}/departures/{self.station_code}?"
+            "accessToken={self.api_token}"
+        )
         print(f"Fetching: {url}")
 
-        headers = {
-            "Accept": "application/json"
-        }
+        headers = {"Accept": "application/json"}
 
         response = urequests.get(url, headers=headers)
 
@@ -141,21 +171,22 @@ class PicoDepartureBoard:
     def _truncate_destination(self, dest, max_chars):
         # remove vowels and spaces from everything except the last char
         # (e.g. "London Waterloo" -> "Lndn Wtrlo" makes more sense than "Lndn Wtrl")
-        # Uppercase vowels are assumed significant, e.g. "Aberystwyth" we'd not want to end up with "brstwyth"
+        # Uppercase vowels are assumed significant, e.g. "Aberystwyth" we'd not want to
+        # end up with "brstwyth"
         core, last = dest[:-1], dest[-1]
-        core = ''.join(c for c in core if c not in 'aeiou ')
+        core = "".join(c for c in core if c not in "aeiou ")
 
         # combine first
         dest = core + last
 
         # truncate while preserving last character if it's a vowel
         if len(dest) > max_chars:
-            if last.lower() in 'aeiou':
+            if last.lower() in "aeiou":
                 # keep last vowel, truncate core only
-                dest = dest[:max_chars-1] + last
+                dest = dest[: max_chars - 1] + last
             else:
                 # truncate normally
-                dest = dest[:max_chars-1] + "."
+                dest = dest[: max_chars - 1] + "."
 
         return dest
 
@@ -172,10 +203,10 @@ class PicoDepartureBoard:
             # convert HH:MM to minutes to display minutes delayed
             std_h, std_m = map(int, std.split(":"))
             etd_h, etd_m = map(int, etd.split(":"))
-            
+
             std_total = std_h * 60 + std_m
             etd_total = etd_h * 60 + etd_m
-            
+
             diff = etd_total - std_total
             return f"+{diff} mins"
         return etd
@@ -185,7 +216,12 @@ class PicoDepartureBoard:
 
         if not services:
             self.oled.text("Welcome to", 1, 10, self.oled.white)
-            self.oled.text(self._truncate_destination(self.station_name, 16), 1, 27, self.oled.white)
+            self.oled.text(
+                self._truncate_destination(self.station_name, 16),
+                1,
+                27,
+                self.oled.white,
+            )
             self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
             self.oled.show()
             return
@@ -197,7 +233,7 @@ class PicoDepartureBoard:
                 break
 
             service = services[idx]
-            std = service.get("std", "??:??")       # scheduled time of departure
+            std = service.get("std", "??:??")  # scheduled time of departure
 
             etd = self._format_etd(service.get("etd", ""), std)
 
@@ -209,7 +245,7 @@ class PicoDepartureBoard:
                 dest = service["destination"][0].get("locationName", "")
             # Truncate destination: 5 chars time + space + dest + space + etd
             # At 8px per char, 128px = 16 chars max
-            # Time takes 6 chars ("HH:MM "), status takes up 3 chars ("CNX", "DLY") - we'll just show the time if it's on time
+            # Time takes 6 chars ("HH:MM" plus a space)
 
             max_dest_chars = 16 - 6  # 10 chars for destination
             if len(dest) > max_dest_chars:
@@ -221,10 +257,15 @@ class PicoDepartureBoard:
 
             if etd:
                 self.oled.text(etd, 1, y + 8, self.oled.white)
-            
+
             if platform:
                 platform_str = f"Plat {platform}"
-                self.oled.text(f"{platform_str}", 128 - len(f"{platform_str}") * 8, y + 8, self.oled.white)
+                self.oled.text(
+                    f"{platform_str}",
+                    128 - len(f"{platform_str}") * 8,
+                    y + 8,
+                    self.oled.white,
+                )
 
         self.oled.show()
 
@@ -253,7 +294,8 @@ class PicoDepartureBoard:
                 last_fetch = now
                 self.render_departures(services, offset)
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     pdb = PicoDepartureBoard()
     pdb.show_boot_screen()
     pdb.connect_to_wifi()
