@@ -141,7 +141,7 @@ class PicoDepartureBoard:
 
         if not services:
             self.oled.text("Welcome to", 1, 10, self.oled.white)
-            self.oled.text(self.station_name, 1, 27, self.oled.white)
+            self.oled.text(self._truncate_destination(self.station_name, 16), 1, 27, self.oled.white)
             self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
             self.oled.show()
             return
