@@ -98,11 +98,11 @@ class PicoDepartureBoard:
     def fetch_departures_demo(self):
         return {
             "trainServices": [
-            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}]},
-            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}]},
-            {"std": "14:40", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}]},
-            {"std": "15:10", "etd": "On time", "destination": [{"locationName": "Glasgow Central"}]},
-            {"std": "16:30", "etd": "On time", "destination": [{"locationName": "Manchester Piccadilly"}]},
+            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}], "platform": "1"},
+            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}], "platform": "2"},
+            {"std": "14:40", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}], "platform": "3"},
+            {"std": "15:10", "etd": "On time", "destination": [{"locationName": "Glasgow Central"}], "platform": "4"},
+            {"std": "16:30", "etd": "On time", "destination": [{"locationName": "Manchester Piccadilly"}], "platform": "5"},
         ]
         }
 
@@ -156,6 +156,7 @@ class PicoDepartureBoard:
             service = services[idx]
             std = service.get("std", "??:??")       # scheduled time of departure
             etd = service.get("etd", "")            # estimated: "On time", "Delayed", or "HH:MM"
+            platform = service.get("platform", "")
 
             # Get destination name, truncate to fit
             dest = ""
@@ -176,6 +177,10 @@ class PicoDepartureBoard:
             # Show status on the line below if delayed/cancelled
             if etd and etd != "On time":
                 self.oled.text(etd, 1, y + 8, self.oled.white)
+            
+            if platform:
+                platform_str = f"Plat {platform}"
+                self.oled.text(f"{platform_str}", 128 - len(f"{platform_str}") * 8, y + 8, self.oled.white)
 
         self.oled.show()
 
