@@ -10,6 +10,7 @@ class PicoDepartureBoard:
 
     WIFI_MINIMUM_CONNECTION_ATTEMPTS = 5
     WIFI_MAXIMUM_CONNECTION_ATTEMPTS = 60
+    DEPARTURE_REFRESH_SECONDS = 60
 
     def __init__(self):
         self.status_led = Pin("LED", Pin.OUT)
@@ -93,11 +94,72 @@ class PicoDepartureBoard:
         self.oled.show()
         
         time.sleep(5)
-        self.oled.fill(0x0000) 
+    def _truncate_destination(self, dest, max_chars):
+        if len(dest) > max_chars:
+            dest = dest[:max_chars - 1] + "."
+        return dest
+
+    def render_departures(self, services, offset=0):
+        self.oled.fill(self.oled.black)
+
+        if not services:
+            self.oled.text("Welcome to", 1, 10, self.oled.white)
+            self.oled.text(self.station_code, 1, 27, self.oled.white)
+            self.oled.show()
+            return
+
+
+        # Show up to 3 services
+        for i in range(3):
+            idx = offset + i
+            if idx >= len(services):
+                break
+
+            service = services[idx]
+            std = service.get("std", "??:??")       # scheduled time of departure
+            etd = service.get("etd", "")            # estimated: "On time", "Delayed", or "HH:MM"
+
+            # Get destination name, truncate to fit
+            dest = ""
+            if service.get("destination"):
+                dest = service["destination"][0].get("locationName", "")
+            # Truncate destination: 5 chars time + space + dest + space + etd
+            # At 8px per char, 128px = 16 chars max
+            # Time takes 6 chars ("HH:MM "), status takes up 3 chars ("CNX", "DLY") - we'll just show the time if it's on time
+
+            max_dest_chars = 16 - 6  # 10 chars for destination
+            if len(dest) > max_dest_chars:
+                dest = self._truncate_destination(dest, max_dest_chars)
+
+            y = 5 + (i * 21)
+            line_text = f"{std} {dest}"
+            self.oled.text(line_text, 1, y, self.oled.white)
+
+            # Show status on the line below if delayed/cancelled
+            if etd and etd != "On time":
+                self.oled.text(etd, 1, y + 8, self.oled.white)
+
+        self.oled.show()
 
     def show_departure_board(self):
         print("Showing departure board")
 
+        services = []
+        offset = 0
+        last_fetch = 0
+
+        # Fake some depatures for testing
+        services = [
+            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}]},
+            {"std": "12:00", "etd": "DLY", "destination": [{"locationName": "Brighton"}]},
+            {"std": "12:00", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}]},
+        ]
+        while True:
+            # Refresh data periodically
+            now = time.time()
+            if now - last_fetch >= self.DEPARTURE_REFRESH_SECONDS:
+                last_fetch = now
+                self.render_departures(services, offset)
 if __name__=='__main__':
     pdb = PicoDepartureBoard()
     pdb.show_boot_screen()
