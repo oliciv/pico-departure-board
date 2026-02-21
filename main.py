@@ -94,6 +94,20 @@ class PicoDepartureBoard:
         self.oled.show()
         
         time.sleep(5)
+    def fetch_departures_demo(self):
+        return {
+            "trainServices": [
+            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}]},
+            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}]},
+            {"std": "14:40", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}]},
+            {"std": "15:10", "etd": "On time", "destination": [{"locationName": "Glasgow Central"}]},
+            {"std": "16:30", "etd": "On time", "destination": [{"locationName": "Manchester Piccadilly"}]},
+        ]
+        }
+
+    def fetch_departures(self, num_rows=3):
+        return self.fetch_departures_demo()
+        url = f"{LDBWS_BASE_URL}/GetDepartureBoard/{self.station_code}?numRows={num_rows}"
     def _truncate_destination(self, dest, max_chars):
         # remove vowels and spaces from everything except the last char
         # (e.g. "London Waterloo" -> "Lndn Wtrlo" makes more sense than "Lndn Wtrl")
@@ -164,18 +178,24 @@ class PicoDepartureBoard:
         offset = 0
         last_fetch = 0
 
-        # Fake some depatures for testing
-        services = [
-            {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}]},
-            {"std": "12:00", "etd": "DLY", "destination": [{"locationName": "Brighton"}]},
-            {"std": "12:00", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}]},
-        ]
         while True:
             # Refresh data periodically
             now = time.time()
             if now - last_fetch >= self.DEPARTURE_REFRESH_SECONDS:
+                data = self.fetch_departures()
+                if data and data.get("trainServices"):
+                    services = data["trainServices"]
+                    offset = 0
+                    print(f"Got {len(services)} services")
+                elif data:
+                    services = []
+                    print("No train services in response")
+                else:
+                    print("Failed to fetch data, retrying...")
+
                 last_fetch = now
                 self.render_departures(services, offset)
+
 if __name__=='__main__':
     pdb = PicoDepartureBoard()
     pdb.show_boot_screen()
