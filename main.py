@@ -20,6 +20,12 @@ class PicoDepartureBoard:
         self.oled.fill(self.oled.black)
         self.oled.show()
 
+        # Load API credentials
+        with open("api.json", "r") as api_json_fp:
+            api_creds = json.load(api_json_fp)
+            self.api_token = api_creds["api_token"]
+            self.station_code = api_creds["station_code"].upper()
+
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
         

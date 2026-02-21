@@ -12,3 +12,18 @@ Create a `wifi.json` file with the following format:
     "password": "<your-password>"
 }
 ```
+
+### API Credentials
+
+Sign up at https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/
+
+Create a `api.json` file with the following format:
+
+```json
+{
+    "api_token": "<your-api-token>",
+    "station_code": "<your-station-code>"
+}
+```
+
+A list of station codes can be found at https://en.wikipedia.org/wiki/UK_railway_stations
