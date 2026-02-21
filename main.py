@@ -26,6 +26,7 @@ class PicoDepartureBoard:
             api_creds = json.load(api_json_fp)
             self.api_token = api_creds["api_token"]
             self.station_code = api_creds["station_code"].upper()
+            self.station_name = api_creds["station_name"]
 
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
@@ -134,7 +135,7 @@ class PicoDepartureBoard:
 
         if not services:
             self.oled.text("Welcome to", 1, 10, self.oled.white)
-            self.oled.text(self.station_code, 1, 27, self.oled.white)
+            self.oled.text(self.station_name, 1, 27, self.oled.white)
             self.oled.show()
             return
 

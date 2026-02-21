@@ -22,7 +22,8 @@ Create a `api.json` file with the following format:
 ```json
 {
     "api_token": "<your-api-token>",
-    "station_code": "<your-station-code>"
+    "station_code": "<your-station-code>",
+    "station_name": "<your-station-name>"
 }
 ```
 
