@@ -146,8 +146,8 @@ class PicoDepartureBoard:
         # return self.fetch_departures_demo()
 
         url = (
-            f"{self.proxy_url}/departures/{self.station_code}?"
-            "accessToken={self.api_token}"
+            f"{self.proxy_url}/departures/{self.station_code}"
+            f"?accessToken={self.api_token}"
         )
         print(f"Fetching: {url}")
 
