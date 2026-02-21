@@ -1,8 +1,12 @@
 import json
 import network
+import ntptime
 import time
+import ubinascii
+import gc
 from oled_lib import OLED_1inch3
 from machine import Pin
+import urequests 
 
 VERSION = "0.0.1"
 
@@ -25,6 +29,7 @@ class PicoDepartureBoard:
         with open("api.json", "r") as api_json_fp:
             api_creds = json.load(api_json_fp)
             self.api_token = api_creds["api_token"]
+            self.proxy_url = api_creds["proxy_url"]
             self.station_code = api_creds["station_code"].upper()
             self.station_name = api_creds["station_name"]
 
@@ -95,11 +100,13 @@ class PicoDepartureBoard:
         self.oled.show()
         
         time.sleep(5)
+        self.oled.fill(self.oled.black) 
+
     def fetch_departures_demo(self):
         return {
             "trainServices": [
             {"std": "12:00", "etd": "On time", "destination": [{"locationName": "London Waterloo"}], "platform": "1"},
-            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}], "platform": "2"},
+            {"std": "13:20", "etd": "DLY", "destination": [{"locationName": "Brighton"}], "platform": "285"},
             {"std": "14:40", "etd": "CNX", "destination": [{"locationName": "Rhoose Cardiff International Airport"}], "platform": "3"},
             {"std": "15:10", "etd": "On time", "destination": [{"locationName": "Glasgow Central"}], "platform": "4"},
             {"std": "16:30", "etd": "On time", "destination": [{"locationName": "Manchester Piccadilly"}], "platform": "5"},
@@ -107,8 +114,30 @@ class PicoDepartureBoard:
         }
 
     def fetch_departures(self, num_rows=3):
-        return self.fetch_departures_demo()
-        url = f"{LDBWS_BASE_URL}/GetDepartureBoard/{self.station_code}?numRows={num_rows}"
+        # return self.fetch_departures_demo()
+
+        url = f"{self.proxy_url}/departures/{self.station_code}?accessToken={self.api_token}"
+        print(f"Fetching: {url}")
+
+        headers = {
+            "Accept": "application/json"
+        }
+
+        response = urequests.get(url, headers=headers)
+
+        gc.collect()
+
+        if response.status_code != 200:
+            print(f"API error: {response.status_code}")
+            print(response.text)
+            response.close()
+            return None
+
+        data = response.json()
+        response.close()
+        gc.collect()
+        return data
+
     def _truncate_destination(self, dest, max_chars):
         # remove vowels and spaces from everything except the last char
         # (e.g. "London Waterloo" -> "Lndn Wtrlo" makes more sense than "Lndn Wtrl")

@@ -22,12 +22,15 @@ Create a `api.json` file with the following format:
 ```json
 {
     "api_token": "<your-api-token>",
+    "proxy_url": "<your-proxy-url>",
     "station_code": "<your-station-code>",
     "station_name": "<your-station-name>"
 }
 ```
 
 A list of station codes can be found at https://en.wikipedia.org/wiki/UK_railway_stations
+
+The National Rail API is SOAP, which is not ideal on the Pico for reasons of memory and sanity. So we'll fetch results through a [Huxley2](https://github.com/jpsingleton/Huxley2) proxy. This can run in Docker, Azure or there is a public instance available.
 
 
 ## Implementation notes
