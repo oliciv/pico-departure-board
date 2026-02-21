@@ -96,7 +96,11 @@ class PicoDepartureBoard:
         time.sleep(5)
     def _truncate_destination(self, dest, max_chars):
         if len(dest) > max_chars:
-            dest = dest[:max_chars - 1] + "."
+            # remove vowels, then spaces, then truncate
+            dest = dest.replace("a", "").replace("e", "").replace("i", "").replace("o", "").replace("u", "")
+            dest = dest.replace(" ", "")
+            if len(dest) > max_chars:
+                dest = dest[:max_chars - 1] + "."
         return dest
 
     def render_departures(self, services, offset=0):
