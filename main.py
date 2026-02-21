@@ -36,7 +36,7 @@ if __name__=='__main__':
 
     OLED.show()
 
-    time.sleep(100)
+    time.sleep(3)
 
     with open("wifi.json", "r") as wifi_json_fp:
         wifi_creds = json.load(wifi_json_fp)
