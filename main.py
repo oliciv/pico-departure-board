@@ -21,15 +21,15 @@ if __name__=='__main__':
     # top
     OLED.line(40, 22, 87, 22, OLED.white)
     # OLED.line(40, 21, 87, 21, OLED.white)
-    OLED.line(80, 22, 60, 12, OLED.white)
+    OLED.line(75, 22, 60, 12, OLED.white)
 
     # connecting line
-    OLED.line(80, 22, 50, 38, OLED.white)
+    OLED.line(75, 22, 55, 38, OLED.white)
 
     # bottom
     OLED.line(40, 38, 87, 38, OLED.white)
     # OLED.line(40, 39, 87, 39, OLED.white)
-    OLED.line(50, 38, 70, 48, OLED.white)
+    OLED.line(55, 38, 70, 48, OLED.white)
 
     OLED.show()
 
