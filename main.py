@@ -130,12 +130,19 @@ class PicoDepartureBoard:
 
         return dest
 
+    def _get_current_time(self):
+        # The pico has no real time clock so we'll need to fetch it from a NTP server
+        ntptime.settime()
+        t = time.localtime()
+        return "{:02d}:{:02d}".format(t[3], t[4])
+
     def render_departures(self, services, offset=0):
         self.oled.fill(self.oled.black)
 
         if not services:
             self.oled.text("Welcome to", 1, 10, self.oled.white)
             self.oled.text(self.station_name, 1, 27, self.oled.white)
+            self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
             self.oled.show()
             return
 
