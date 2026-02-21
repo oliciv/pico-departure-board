@@ -174,8 +174,7 @@ class PicoDepartureBoard:
             line_text = f"{std} {dest}"
             self.oled.text(line_text, 1, y, self.oled.white)
 
-            # Show status on the line below if delayed/cancelled
-            if etd and etd != "On time":
+            if etd:
                 self.oled.text(etd, 1, y + 8, self.oled.white)
             
             if platform:
