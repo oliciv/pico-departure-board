@@ -132,6 +132,7 @@ class PicoDepartureBoard:
 
     def _get_current_time(self):
         # The pico has no real time clock so we'll need to fetch it from a NTP server
+        # TODO: Timezone (BST/GMT) support
         ntptime.settime()
         t = time.localtime()
         return "{:02d}:{:02d}".format(t[3], t[4])
@@ -146,8 +147,7 @@ class PicoDepartureBoard:
             self.oled.show()
             return
 
-
-        # Show up to 3 services
+        # Show up to 3 services, that's all we can fit!
         for i in range(3):
             idx = offset + i
             if idx >= len(services):
