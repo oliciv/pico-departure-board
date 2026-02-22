@@ -220,11 +220,14 @@ class PicoDepartureBoard:
 
         return dest
 
-    def _get_current_time(self):
+    def _get_current_time(self, include_seconds=False):
         # NTP is synced once after WiFi connects; just read the local clock here
         # TODO: Timezone (BST/GMT) support
         t = time.localtime()
-        return "{:02d}:{:02d}".format(t[3], t[4])
+        if include_seconds:
+            return "{:02d}:{:02d}:{:02d}".format(t[3], t[4], t[5])
+        else:
+            return "{:02d}:{:02d}".format(t[3], t[4])
 
     def _format_etd(self, etd, std):
         # estimated: "On time", "Delayed", or "HH:MM"
@@ -307,7 +310,7 @@ class PicoDepartureBoard:
             self.oled.hline(0, 44, 128, self.oled.white)
 
             # Centered clock at the bottom
-            current_time = self._get_current_time()
+            current_time = self._get_current_time(include_seconds=True)
             time_width = len(current_time) * 8
             time_x = (128 - time_width) // 2
             self.oled.text(current_time, time_x, 50, self.oled.white)
@@ -347,11 +350,9 @@ class PicoDepartureBoard:
                 last_fetch = now
                 self.render_departures(services, offset)
 
-            # We can refresh just the clock more often while it's visible
-            if (
-                self.show_clock
-                and now - last_fetch >= self.DEPARTURE_REFRESH_SECONDS / 10
-            ):
+            elif self.show_clock and now - last_fetch >= 1:
+                # We can refresh just the clock more often while it's visible,
+                # as this includes seconds, we'll need to update it every second
                 self.render_departures(services, offset)
 
             # Read all buttons and detect change in state (pressed)
