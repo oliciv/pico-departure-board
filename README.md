@@ -4,6 +4,26 @@
 
 This is a departure board for a train station, running on a Raspberry Pi Pico W with a Waveshare 1.3inch OLED HAT. There are many bigger departure boards in the world, this was a fun challenge to fit on a tiny screen. It's not perfect, but it works!
 
+## Implementation notes
+
+Train station names are difficult to display on the OLED screen, so we need to truncate them. The longest one I've found is "Rhoose Cardiff International Airport"* (34 characters). The OLED screen is 128 pixels wide, and the font is 8 pixels wide, so we can fit 16 characters per line.
+
+Even so, font size 8 is quite large, so we can only fit 14 characters per line. To do: Investigate if we can use a smaller font for some items (e.g platform, status, etc)
+
+* It's NOT Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, which is officially called "Llanfairpwll".
+
+## Hardware
+
+- Raspberry Pi Pico WH (with pre-soldered headers)
+- Waveshare 1.3inch OLED HAT (128x64, SPI)
+
+The OLED HAT connects directly to the top of the Pico WH. No soldering required.
+
+The screen has two buttons which are used for controls:
+
+- **"KEY0"**: Toggle the clock display on/off
+- **"KEY1"**: Scroll through later departures
+
 ## Initial Setup
 
 ### WiFi Credentials
@@ -36,19 +56,31 @@ A list of station codes can be found at https://en.wikipedia.org/wiki/UK_railway
 
 The National Rail API is SOAP, which is not ideal on the Pico for reasons of memory and sanity. So we'll fetch results through a [Huxley2](https://github.com/jpsingleton/Huxley2) proxy. This can run in Docker, Azure or there is a public instance available.
 
+## Deploying to the Pico
 
-## Implementation notes
+After following the initial setup instructions, you can deploy the code to the Pico.
 
-Train station names are difficult to display on the OLED screen, so we need to truncate them. The longest one I've found is "Rhoose Cardiff International Airport"* (34 characters). The OLED screen is 128 pixels wide, and the font is 8 pixels wide, so we can fit 16 characters per line.
+### 1. Install MicroPython firmware
 
-Even so, font size 8 is quite large, so we can only fit 14 characters per line. To do: Investigate if we can use a smaller font for some items (e.g platform, status, etc)
+1. Hold the **BOOTSEL** button on the Pico and plug it into your computer via USB. It will appear as a USB drive called `RPI-RP2`.
+2. Download the latest MicroPython `.uf2` firmware for the **Pico W** from [micropython.org/download/RPI_PICO_W](https://micropython.org/download/RPI_PICO_W/).
+3. Drag the `.uf2` file onto the `RPI-RP2` drive. The Pico will reboot automatically.
 
-* It's NOT Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, which is officially called "Llanfairpwll".
+### 2. Upload the code
 
-## Hardware
+I use [VS Code](https://code.visualstudio.com/) with the **MicroPico** extension (`paulober.pico-w-go`):
 
-- Raspberry Pi Pico W
-- Waveshare 1.3inch OLED HAT (128x64)
+1. Install the extension and open this project folder in VS Code.
+2. Connect the Pico via USB.
+3. Open the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run **MicroPico: Upload project to Pico**.
+
+This uploads all project files to the Pico's filesystem. The board will run `main.py` automatically on boot.
+
+Alternatively, you can use [Thonny](https://thonny.org/) or [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html) to copy files manually.
+
+### 3. Verify
+
+Unplug and replug the Pico. You should see the boot screen, then a WiFi connection message, followed by live departures. If a config file is missing or invalid, an error message will be shown on the display.
 
 ## Future ideas
 
@@ -56,6 +88,7 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 - It could be battery powered and portable or even wearable
 - Need to find a way to display calling stations
 - Limit to a specific platform, or destination(s)
+- It could still be smaller...
 - Better error handling!
 
 ## License
