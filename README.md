@@ -55,6 +55,8 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 - It'll need a 3d printed case
 - It could be battery powered and portable or even wearable
 - Need to find a way to display calling stations
+- Limit to a specific platform, or destination(s)
+- Better error handling!
 
 ## License
 

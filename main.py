@@ -162,16 +162,16 @@ class PicoDepartureBoard:
 
         headers = {"Accept": "application/json"}
 
-        response = urequests.get(url, headers=headers)
-
-        gc.collect()
-
-        if response.status_code != 200:
-            print(f"API error: {response.status_code}")
-            print(response.text)
-            response.close()
+        try:
+            response = urequests.get(url, headers=headers)
+            if response.status_code != 200:
+                raise Exception(f"API error: {response.status_code}")
+        except Exception as e:
+            print(f"API error: {e}")
+            self._show_message("API Error", "Status", str(e))
+            time.sleep(5)
             return None
-
+        gc.collect()
         data = response.json()
         response.close()
         gc.collect()
