@@ -323,6 +323,8 @@ class PicoDepartureBoard:
 
         key_a = Pin(15, Pin.IN, Pin.PULL_UP)
         key_b = Pin(17, Pin.IN, Pin.PULL_UP)
+        prev_key_a = 1
+        prev_key_b = 1
 
         while True:
             # Refresh data periodically
@@ -349,15 +351,21 @@ class PicoDepartureBoard:
             ):
                 self.render_departures(services, offset)
 
-            if key_a.value() == 0:
+            cur_key_a = key_a.value()
+            cur_key_b = key_b.value()
+
+            if cur_key_a == 0 and prev_key_a == 1:
                 self.show_clock = not self.show_clock
                 self.render_departures(services, offset)
 
-            if key_b.value() == 0:
+            if cur_key_b == 0 and prev_key_b == 1:
                 offset += 1
                 if offset >= len(services):
                     offset = 0
                 self.render_departures(services, offset)
+
+            prev_key_a = cur_key_a
+            prev_key_b = cur_key_b
 
 
 if __name__ == "__main__":
