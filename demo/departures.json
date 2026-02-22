@@ -1,0 +1,150 @@
+{
+    "trainServices": [
+        {
+            "formation": null,
+            "origin": [
+                {
+                    "locationName": "Ironhaven Docks",
+                    "crs": "IHD",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "destination": [
+                {
+                    "locationName": "Copperwick Central",
+                    "crs": "CWC",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "currentOrigins": null,
+            "currentDestinations": null,
+            "rsid": "IH204700",
+            "serviceIdPercentEncoded": "884210IHCRX_",
+            "serviceIdGuid": "39393834-0000-3231-4948-4352585f0000",
+            "serviceIdUrlSafe": "ODg0MjEwSUhDUlhf",
+            "sta": null,
+            "eta": null,
+            "std": "23:04",
+            "etd": "On time",
+            "platform": "1",
+            "operator": "Ironhaven & Coastal Rail",
+            "operatorCode": "IC",
+            "isCircularRoute": false,
+            "isCancelled": false,
+            "filterLocationCancelled": false,
+            "serviceType": 0,
+            "length": 0,
+            "detachFront": false,
+            "isReverseFormation": false,
+            "cancelReason": null,
+            "delayReason": null,
+            "serviceID": "884210IHCRX_",
+            "adhocAlerts": null
+        },
+        {
+            "formation": null,
+            "origin": [
+                {
+                    "locationName": "Copperwick Central",
+                    "crs": "CWC",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "destination": [
+                {
+                    "locationName": "Stonebridge Hollow",
+                    "crs": "SBH",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "currentOrigins": null,
+            "currentDestinations": null,
+            "rsid": "CW118900",
+            "serviceIdPercentEncoded": "772991CWSBH_",
+            "serviceIdGuid": "37373239-0000-3931-4357-5342485f0000",
+            "serviceIdUrlSafe": "NzcyOTkxQ1dTQkhf",
+            "sta": null,
+            "eta": null,
+            "std": "23:16",
+            "etd": "On time",
+            "platform": "2",
+            "operator": "Copperwick Regional",
+            "operatorCode": "CR",
+            "isCircularRoute": false,
+            "isCancelled": false,
+            "filterLocationCancelled": false,
+            "serviceType": 0,
+            "length": 0,
+            "detachFront": false,
+            "isReverseFormation": false,
+            "cancelReason": null,
+            "delayReason": null,
+            "serviceID": "772991CWSBH_",
+            "adhocAlerts": null
+        },
+        {
+            "formation": null,
+            "origin": [
+                {
+                    "locationName": "Rivermouth Exchange",
+                    "crs": "RMX",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "destination": [
+                {
+                    "locationName": "Stonebridge Hollow",
+                    "crs": "SBH",
+                    "via": null,
+                    "futureChangeTo": null,
+                    "assocIsCancelled": false
+                }
+            ],
+            "currentOrigins": null,
+            "currentDestinations": null,
+            "rsid": "RM662300",
+            "serviceIdPercentEncoded": "661204RMSBH_",
+            "serviceIdGuid": "36363132-0000-3034-524d-5342485f0000",
+            "serviceIdUrlSafe": "NjYxMjA0Uk1TQkhf",
+            "sta": null,
+            "eta": null,
+            "std": "00:02",
+            "etd": "On time",
+            "platform": "2",
+            "operator": "Rivermouth Valley Lines",
+            "operatorCode": "RV",
+            "isCircularRoute": false,
+            "isCancelled": false,
+            "filterLocationCancelled": false,
+            "serviceType": 0,
+            "length": 0,
+            "detachFront": false,
+            "isReverseFormation": false,
+            "cancelReason": null,
+            "delayReason": null,
+            "serviceID": "661204RMSBH_",
+            "adhocAlerts": null
+        }
+    ],
+    "busServices": null,
+    "ferryServices": null,
+    "generatedAt": "2026-02-22T23:03:35.7108104+00:00",
+    "locationName": "Brindleford Junction",
+    "crs": "BFJ",
+    "filterLocationName": null,
+    "filtercrs": null,
+    "filterType": 0,
+    "nrccMessages": null,
+    "platformAvailable": true,
+    "areServicesAvailable": true
+}

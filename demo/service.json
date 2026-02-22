@@ -1,0 +1,271 @@
+{
+    "adhocAlerts": null,
+    "formation": null,
+    "previousCallingPoints": [
+        {
+            "callingPoint": [
+                {
+                    "locationName": "Ironhaven Docks",
+                    "crs": "IHD",
+                    "st": "19:10",
+                    "et": null,
+                    "at": "19:12",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Southport Quay",
+                    "crs": "SPQ",
+                    "st": "19:14",
+                    "et": null,
+                    "at": "19:17",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Brassford Halt",
+                    "crs": "BFH",
+                    "st": "19:18",
+                    "et": null,
+                    "at": "19:21",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Coalridge",
+                    "crs": "CLR",
+                    "st": "19:25",
+                    "et": null,
+                    "at": "19:29",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Timberley Green",
+                    "crs": "TGR",
+                    "st": "19:33",
+                    "et": null,
+                    "at": "19:38",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Ashbourne Cross",
+                    "crs": "ASC",
+                    "st": "19:47",
+                    "et": null,
+                    "at": "19:59",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Cinderford Vale",
+                    "crs": "CFV",
+                    "st": "19:52",
+                    "et": null,
+                    "at": "20:05",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Riverton Market",
+                    "crs": "RVM",
+                    "st": "20:09",
+                    "et": null,
+                    "at": "20:13",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Highcastle",
+                    "crs": "HCL",
+                    "st": "20:28",
+                    "et": null,
+                    "at": "20:39",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Millstone Ridge",
+                    "crs": "MSR",
+                    "st": "20:49",
+                    "et": null,
+                    "at": "20:59",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Stonebridge Hollow",
+                    "crs": "SBH",
+                    "st": "21:03",
+                    "et": null,
+                    "at": "21:07",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                }
+            ],
+            "serviceType": 0,
+            "serviceChangeRequired": false,
+            "assocIsCancelled": false
+        }
+    ],
+    "subsequentCallingPoints": [
+        {
+            "callingPoint": [
+                {
+                    "locationName": "Willowbrook",
+                    "crs": "WLB",
+                    "st": "21:15",
+                    "et": null,
+                    "at": "21:18",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Bathford Springs",
+                    "crs": "BFS",
+                    "st": "21:27",
+                    "et": null,
+                    "at": "21:31",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Copperwick Central",
+                    "crs": "CWC",
+                    "st": "21:41",
+                    "et": null,
+                    "at": "On time",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "North Filton Yard",
+                    "crs": "NFY",
+                    "st": "21:52",
+                    "et": null,
+                    "at": "On time",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Patchmoor",
+                    "crs": "PMR",
+                    "st": "21:58",
+                    "et": null,
+                    "at": "On time",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Severnbridge Junction",
+                    "crs": "SBJ",
+                    "st": "22:09",
+                    "et": null,
+                    "at": "On time",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Newport Vale",
+                    "crs": "NPV",
+                    "st": "22:20",
+                    "et": null,
+                    "at": "On time",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                },
+                {
+                    "locationName": "Rivermouth Exchange",
+                    "crs": "RMX",
+                    "st": "22:34",
+                    "et": null,
+                    "at": "22:36",
+                    "isCancelled": false,
+                    "length": 0,
+                    "detachFront": false,
+                    "formation": null,
+                    "adhocAlerts": null
+                }
+            ],
+            "serviceType": 0,
+            "serviceChangeRequired": false,
+            "assocIsCancelled": false
+        }
+    ],
+    "generatedAt": "2026-02-22T23:04:22.2060732+00:00",
+    "serviceType": 0,
+    "locationName": "Brindleford Junction",
+    "crs": "BFJ",
+    "operator": "Ironhaven & Coastal Rail",
+    "operatorCode": "IC",
+    "rsid": "IC552800",
+    "isCancelled": false,
+    "cancelReason": null,
+    "delayReason": "This service has been delayed by a late running freight ahead on the single line section",
+    "overdueMessage": null,
+    "length": 0,
+    "detachFront": false,
+    "isReverseFormation": false,
+    "platform": "1",
+    "sta": "21:09",
+    "eta": null,
+    "ata": "21:12",
+    "std": "21:09",
+    "etd": null,
+    "atd": "21:13"
+}
