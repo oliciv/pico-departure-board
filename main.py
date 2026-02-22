@@ -412,6 +412,8 @@ class PicoDepartureBoard:
             points = self.fetch_calling_points(service_id)
             self._current_top_service_id = service_id
             self._calling_at_str = "Calling at: " + ", ".join(points) if points else ""
+            if len(points) == 1:
+                self._calling_at_str = f"{self._calling_at_str} Only"
             self._calling_at_phase = "info"
             self._calling_at_scroll_offset = 0
             self._calling_at_phase_start = time.ticks_ms()
