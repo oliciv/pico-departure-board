@@ -19,6 +19,7 @@ class PicoDepartureBoard:
     CALLING_AT_PAUSE_MS = 1000
     CALLING_AT_SCROLL_MS = 100
     API_TIMEOUT_SECONDS = 10
+    ROTATE_SCREEN = False
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
     # noticable/jarring in the middle of the night if time has drifted slightly
@@ -29,7 +30,7 @@ class PicoDepartureBoard:
         self.status_led = Pin("LED", Pin.OUT)
         self.status_led.value(True)
 
-        self.oled = OLED_1inch3()
+        self.oled = OLED_1inch3(rotate=self.ROTATE_SCREEN)
 
         self.oled.fill(self.oled.black)
         self.oled.show()

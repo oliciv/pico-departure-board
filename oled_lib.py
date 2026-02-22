@@ -11,11 +11,11 @@ CS = 9
 
 class OLED_1inch3(framebuf.FrameBuffer):
     # https://www.waveshare.com/wiki/Pico-OLED-1.3
-    def __init__(self):
+    def __init__(self, rotate=False):
         self.width = 128
         self.height = 64
 
-        self.rotate = 180  # only 0 and 180
+        self.rotate = 0 if rotate else 180  # only 0 and 180
 
         self.cs = Pin(CS, Pin.OUT)
         self.rst = Pin(RST, Pin.OUT)
