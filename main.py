@@ -321,6 +321,13 @@ class PicoDepartureBoard:
                 last_fetch = now
                 self.render_departures(services, offset)
 
+            # We can refresh just the clock more often while it's visible
+            if (
+                self.show_clock
+                and now - last_fetch >= self.DEPARTURE_REFRESH_SECONDS / 10
+            ):
+                self.render_departures(services, offset)
+
             if key_a.value() == 0:
                 self.show_clock = not self.show_clock
                 self.render_departures(services, offset)
