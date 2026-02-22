@@ -137,47 +137,7 @@ class PicoDepartureBoard:
         time.sleep(5)
         self.oled.fill(self.oled.black)
 
-    def fetch_departures_demo(self):
-        return {
-            "trainServices": [
-                {
-                    "std": "12:00",
-                    "etd": "On time",
-                    "destination": [{"locationName": "London Waterloo"}],
-                    "platform": "1",
-                },
-                {
-                    "std": "13:20",
-                    "etd": "DLY",
-                    "destination": [{"locationName": "Brighton"}],
-                    "platform": "285",
-                },
-                {
-                    "std": "14:40",
-                    "etd": "CNX",
-                    "destination": [
-                        {"locationName": "Rhoose Cardiff International Airport"}
-                    ],
-                    "platform": "3",
-                },
-                {
-                    "std": "15:10",
-                    "etd": "On time",
-                    "destination": [{"locationName": "Glasgow Central"}],
-                    "platform": "4",
-                },
-                {
-                    "std": "16:30",
-                    "etd": "On time",
-                    "destination": [{"locationName": "Manchester Piccadilly"}],
-                    "platform": "5",
-                },
-            ]
-        }
-
     def fetch_departures(self, num_rows=3):
-        # return self.fetch_departures_demo()
-
         url = (
             f"{self.proxy_url}/departures/{self.station_code}"
             f"?accessToken={self.api_token}"
