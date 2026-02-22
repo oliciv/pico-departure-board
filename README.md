@@ -6,11 +6,11 @@ This is a departure board for a train station, running on a Raspberry Pi Pico W 
 
 ## Implementation notes
 
-Train station names are difficult to display on the OLED screen, so we need to truncate them. The longest one I've found is "Rhoose Cardiff International Airport"* (34 characters). The OLED screen is 128 pixels wide, and the font is 8 pixels wide, so we can fit 16 characters per line.
+Train station names are difficult to display on such a small screen, so we need to truncate them. The longest one I've found is "Rhoose Cardiff International Airport"* (34 characters). The OLED screen is 128 pixels wide, and the font is 8 pixels wide, so we can fit 16 characters per line.
 
 Even so, font size 8 is quite large, so we can only fit 14 characters per line. To do: Investigate if we can use a smaller font for some items (e.g platform, status, etc)
 
-* It's NOT Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, which is officially called "Llanfairpwll".
+* It's NOT Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch, which is officially called "[Llanfairpwll](https://www.nationalrail.co.uk/stations/llanfairpwll/)".
 
 ## Hardware
 
