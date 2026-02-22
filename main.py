@@ -427,8 +427,7 @@ class PicoDepartureBoard:
         time_ms_now = time.ticks_ms()
         elapsed = time.ticks_diff(time_ms_now, self._calling_at_phase_start)
 
-        if self._calling_at_phase == "info" and elapsed >= self.CALLING_AT_PAUSE_MS:
-            print("Switching to scroll")
+        if self._calling_at_phase == "info" and elapsed >= self.DELAY_PLATFORM_DISPLAY_MS:
             self._calling_at_phase = "scroll"
             self._calling_at_scroll_offset = 0
             self._calling_at_phase_start = time_ms_now
