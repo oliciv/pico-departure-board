@@ -15,6 +15,9 @@ class PicoDepartureBoard:
     WIFI_MINIMUM_CONNECTION_ATTEMPTS = 0
     WIFI_MAXIMUM_CONNECTION_ATTEMPTS = 60
     DEPARTURE_REFRESH_SECONDS = 60
+    DELAY_PLATFORM_DISPLAY_MS = 10000
+    CALLING_AT_PAUSE_MS = 1000
+    CALLING_AT_SCROLL_MS = 100
     API_TIMEOUT_SECONDS = 10
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
@@ -198,6 +201,33 @@ class PicoDepartureBoard:
         gc.collect()
         return data
 
+    def fetch_calling_points(self, service_id):
+        url = f"{self.proxy_url}/service/{service_id}" f"?accessToken={self.api_token}"
+        print(f"Fetching calling points: {url}")
+
+        headers = {"Accept": "application/json"}
+
+        try:
+            response = urequests.get(
+                url, headers=headers, timeout=self.API_TIMEOUT_SECONDS
+            )
+            if response.status_code != 200:
+                return []
+        except Exception as e:
+            print(f"Calling points fetch failed: {e}")
+            return []
+
+        gc.collect()
+        data = response.json()
+        response.close()
+        gc.collect()
+
+        try:
+            points = data["subsequentCallingPoints"][0]["callingPoint"]
+            return [p["locationName"] for p in points]
+        except (KeyError, IndexError):
+            return []
+
     def _truncate_destination(self, dest, max_chars):
         # remove vowels and spaces from everything except the last char
         # (e.g. "London Waterloo" -> "Lndn Wtrlo" makes more sense than "Lndn Wtrl")
@@ -296,7 +326,7 @@ class PicoDepartureBoard:
             return f"+{diff} mins"
         return etd
 
-    def render_departures(self, services, offset=0):
+    def render_departures(self, services, offset=0, calling_at_text=None):
         self.oled.fill(self.oled.black)
 
         if not services:
@@ -314,8 +344,8 @@ class PicoDepartureBoard:
         num_rows = 2 if self.show_clock else 3
         row_spacing = 20 if self.show_clock else 21
 
-        for i in range(num_rows):
-            idx = offset + i
+        for current_row in range(num_rows):
+            idx = offset + current_row
             if idx >= len(services):
                 break
 
@@ -337,21 +367,26 @@ class PicoDepartureBoard:
             if len(dest) > max_dest_chars:
                 dest = self._truncate_destination(dest, max_dest_chars)
 
-            y = 2 + (i * row_spacing)
+            y = 2 + (current_row * row_spacing)
             line_text = f"{std} {dest}"
             self.oled.text(line_text, 1, y, self.oled.white)
 
-            if etd:
-                self.oled.text(etd, 1, y + 10, self.oled.white)
+            # Second line: for top service, alternate between etd/platform
+            # and scrolling calling points
+            if current_row == 0 and calling_at_text is not None:
+                self.oled.text(calling_at_text[:16], 1, y + 10, self.oled.white)
+            else:
+                if etd:
+                    self.oled.text(etd, 1, y + 10, self.oled.white)
 
-            if platform:
-                platform_str = f"Plat {platform}"
-                self.oled.text(
-                    f"{platform_str}",
-                    128 - len(f"{platform_str}") * 8,
-                    y + 10,
-                    self.oled.white,
-                )
+                if platform:
+                    platform_str = f"Plat {platform}"
+                    self.oled.text(
+                        platform_str,
+                        128 - len(platform_str) * 8,
+                        y + 10,
+                        self.oled.white,
+                    )
 
         if self.show_clock:
             # Separator line
@@ -365,12 +400,73 @@ class PicoDepartureBoard:
 
         self.oled.show()
 
+    def update_calling_points(self, services, offset):
+        if not services or offset >= len(services):
+            # If there are no services to display, there can't be any calling points
+            self._current_top_service_id = None
+            self._calling_at_str = ""
+            return
+        service_id = services[offset].get("serviceID", "")
+        if service_id and service_id != self._current_top_service_id:
+            points = self.fetch_calling_points(service_id)
+            self._current_top_service_id = service_id
+            self._calling_at_str = "Calling at: " + ", ".join(points) if points else ""
+            self._calling_at_phase = "info"
+            self._calling_at_scroll_offset = 0
+            self._calling_at_phase_start = time.ticks_ms()
+            print(f"Calling at: {self._calling_at_str}")
+
+    def advance_calling_at(self):
+        """Advance the calling-at animation state. Returns True if display needs updating."""
+        if not self._calling_at_str:
+            return False
+
+        time_ms_now = time.ticks_ms()
+        elapsed = time.ticks_diff(time_ms_now, self._calling_at_phase_start)
+
+        if self._calling_at_phase == "info" and elapsed >= self.CALLING_AT_PAUSE_MS:
+            print("Switching to scroll")
+            self._calling_at_phase = "scroll"
+            self._calling_at_scroll_offset = 0
+            self._calling_at_phase_start = time_ms_now
+            return True
+        elif self._calling_at_phase == "scroll" and elapsed >= (
+            self.CALLING_AT_PAUSE_MS
+            if self._calling_at_scroll_offset == 0
+            else self.CALLING_AT_SCROLL_MS
+        ):
+            self._calling_at_scroll_offset += 1
+            self._calling_at_phase_start = time_ms_now
+            # Once the text has scrolled off screen, switch back to delay/platform info
+            if self._calling_at_scroll_offset >= len(self._calling_at_str):
+                self._calling_at_phase = "info"
+                self._calling_at_scroll_offset = 0
+            return True
+
+        return False
+
+    def get_calling_at_text(self):
+        if not self._calling_at_str or self._calling_at_phase == "info":
+            return None
+        # Show a 16-char window scrolling left through the string
+        return self._calling_at_str[self._calling_at_scroll_offset :][:16]
+
     def show_departure_board(self):
         print("Showing departure board")
 
         services = []
         offset = 0
         last_fetch = 0
+
+        # Calling points state
+        self._current_top_service_id = None
+        self._calling_at_str = ""
+        self._calling_at_phase = (
+            "info"  # "info" (delay/platform) or "scroll" (calling points)
+        )
+        self._calling_at_scroll_offset = 0
+        self._calling_at_phase_start = time.ticks_ms()
+        last_render = time.ticks_ms()
 
         buttons = {
             "clock": Pin(15, Pin.IN, Pin.PULL_UP),
@@ -402,12 +498,23 @@ class PicoDepartureBoard:
                     print("Failed to fetch data, retrying...")
 
                 last_fetch = now
-                self.render_departures(services, offset)
+                self.update_calling_points(services, offset)
+                self.render_departures(services, offset, self.get_calling_at_text())
 
-            elif self.show_clock and now - last_fetch >= 1:
-                # We can refresh just the clock more often while it's visible,
-                # as this includes seconds, we'll need to update it every second
-                self.render_departures(services, offset)
+            else:
+                needs_render = self.advance_calling_at()
+
+                # Re-render for clock seconds
+                time_ms_now = time.ticks_ms()
+                if (
+                    self.show_clock
+                    and time.ticks_diff(time_ms_now, last_render) >= 1000
+                ):
+                    needs_render = True
+
+                if needs_render:
+                    self.render_departures(services, offset, self.get_calling_at_text())
+                    last_render = time_ms_now
 
             # Read all buttons and detect change in state (pressed)
             pressed = {}
@@ -418,13 +525,14 @@ class PicoDepartureBoard:
 
             if pressed["clock"]:
                 self.show_clock = not self.show_clock
-                self.render_departures(services, offset)
+                self.render_departures(services, offset, self.get_calling_at_text())
 
             if pressed["scroll"]:
                 offset += 1
                 if offset >= len(services):
                     offset = 0
-                self.render_departures(services, offset)
+                self.update_calling_points(services, offset)
+                self.render_departures(services, offset, self.get_calling_at_text())
 
 
 if __name__ == "__main__":
