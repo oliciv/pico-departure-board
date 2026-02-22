@@ -17,6 +17,10 @@ class PicoDepartureBoard:
     DEPARTURE_REFRESH_SECONDS = 60
     API_TIMEOUT_SECONDS = 10
 
+    # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
+    # noticable/jarring if time has drifted slightly)
+    TIME_SYNC_HOUR_UTC = 2
+
     def __init__(self):
         self.status_led = Pin("LED", Pin.OUT)
         self.status_led.value(True)
@@ -121,11 +125,7 @@ class PicoDepartureBoard:
             )
             raise Exception("Connection failed")
 
-        # Sync clock via NTP now that we have network
-        try:
-            ntptime.settime()
-        except Exception as e:
-            print(f"NTP sync failed: {e}")
+        self.sync_time()
 
         self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
 
@@ -220,14 +220,62 @@ class PicoDepartureBoard:
 
         return dest
 
-    def _get_current_time(self, include_seconds=False):
-        # NTP is synced once after WiFi connects; just read the local clock here
-        # TODO: Timezone (BST/GMT) support
-        t = time.localtime()
-        if include_seconds:
-            return "{:02d}:{:02d}:{:02d}".format(t[3], t[4], t[5])
+    def _last_sunday_of_month(self, year, month):
+        """
+        Return day of month of the last Sunday in a given month
+        """
+        # Find last day of the month
+        if month == 12:
+            next_month = 1
+            next_year = year + 1
         else:
-            return "{:02d}:{:02d}".format(t[3], t[4])
+            next_month = month + 1
+            next_year = year
+        # Last day = day before the 1st of next month
+        t = time.mktime((next_year, next_month, 1, 0, 0, 0, 0, 0))
+        t -= 24 * 60 * 60  # subtract one day
+        last_day_info = time.localtime(t)
+        last_day = last_day_info[2]
+
+        # Back up to Sunday (MicroPython: 0=Mon, 6=Sun)
+        days_since_sunday = (last_day_info[6] + 1) % 7
+        return last_day - days_since_sunday
+
+    def sync_time(self):
+        """
+        Sync clock via NTP and determine whether we're in BST.
+        BST starts at 01:00 UTC on the last Sunday of March
+        and ends at 01:00 UTC on the last Sunday of October.
+        """
+        try:
+            ntptime.settime()
+        except Exception as e:
+            # Not the end of the world, we'll try again tomorrow!
+            print(f"NTP sync failed: {e}")
+
+        year = time.localtime()[0]
+        bst_start = time.mktime(
+            (year, 3, self._last_sunday_of_month(year, 3), 1, 0, 0, 0, 0)
+        )
+        bst_end = time.mktime(
+            (year, 10, self._last_sunday_of_month(year, 10), 1, 0, 0, 0, 0)
+        )
+        now = time.time()
+        self.is_bst = bst_start <= now < bst_end
+        self._last_sync_date = time.localtime()[:3]  # (year, month, day)
+        print(f"Time synced, BST status: {self.is_bst}")
+
+    def _get_current_time(self, include_seconds=False):
+        t = time.localtime()
+        hour = t[3]
+        if self.is_bst:
+            # BST is UTC+1, so add 1 hour (and wrap around if necessary for midnight)
+            hour = (hour + 1) % 24
+
+        if include_seconds:
+            return "{:02d}:{:02d}:{:02d}".format(hour, t[4], t[5])
+        else:
+            return "{:02d}:{:02d}".format(hour, t[4])
 
     def _format_etd(self, etd, std):
         # estimated: "On time", "Delayed", "+MM mins", or "HH:MM"
@@ -333,8 +381,14 @@ class PicoDepartureBoard:
         prev_state = {name: 1 for name in buttons}
 
         while True:
-            # Refresh data periodically
             now = time.time()
+
+            # Daily NTP sync and BST recalculation at 02:00 UTC
+            t = time.localtime(now)
+            if t[3] == self.TIME_SYNC_HOUR_UTC and t[:3] != self._last_sync_date:
+                self.sync_time()
+
+            # Refresh data periodically
             if now - last_fetch >= self.DEPARTURE_REFRESH_SECONDS:
                 data = self.fetch_departures()
                 if data and data.get("trainServices"):
