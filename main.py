@@ -27,14 +27,33 @@ class PicoDepartureBoard:
         self.oled.show()
 
         # Load API credentials
-        with open("api.json", "r") as api_json_fp:
-            api_creds = json.load(api_json_fp)
-            self.api_token = api_creds["api_token"]
-            self.proxy_url = api_creds["proxy_url"]
-            self.station_code = api_creds["station_code"].upper()
-            self.station_name = api_creds["station_name"]
+        api_creds = self._load_json_config(
+            "api.json", ["api_token", "proxy_url", "station_code", "station_name"]
+        )
+        self.api_token = api_creds["api_token"]
+        self.proxy_url = api_creds["proxy_url"]
+        self.station_code = api_creds["station_code"].upper()
+        self.station_name = api_creds["station_name"]
 
         self.show_clock = True
+
+    def _load_json_config(self, filename, required_keys):
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+        except OSError:
+            self._show_message("Missing file", filename)
+            raise
+        except ValueError:
+            self._show_message("Invalid JSON", filename)
+            raise
+
+        for key in required_keys:
+            if key not in data:
+                self._show_message("Missing key", f"'{key}'", f"in {filename}")
+                raise KeyError(f"Missing '{key}' in {filename}")
+
+        return data
 
     def _show_message(self, line1, line2=None, line3=None):
         self.oled.fill(self.oled.black)
@@ -72,11 +91,10 @@ class PicoDepartureBoard:
         self.oled.show()
 
     def connect_to_wifi(self):
-        with open("wifi.json", "r") as wifi_json_fp:
-            wifi_creds = json.load(wifi_json_fp)
-            ssid = wifi_creds["ssid"]
-            password = wifi_creds["password"]
-            print("WiFi creds:", wifi_creds)
+        wifi_creds = self._load_json_config("wifi.json", ["ssid", "password"])
+        ssid = wifi_creds["ssid"]
+        password = wifi_creds["password"]
+        print("WiFi creds:", wifi_creds)
 
         wlan = network.WLAN(network.STA_IF)
         wlan.active(True)
