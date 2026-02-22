@@ -74,6 +74,20 @@ Alternatively, you can use [Thonny](https://thonny.org/) or [mpremote](https://d
 
 Unplug and replug the Pico. You should see the boot screen, then a WiFi connection message, followed by live departures. If a config file is missing or invalid, an error message will be shown on the display.
 
+## Constants
+
+There are a few constants that control the behaviour of the departure board that you can tweak in `main.py`:
+
+- **WIFI_MINIMUM_CONNECTION_ATTEMPTS**: The minimum number of WiFi connection attempts to make before proceeding - I used mainly to simulate a slow WiFi connection and test that the status screen was displayed.
+- **WIFI_MAXIMUM_CONNECTION_ATTEMPTS**: The maximum number of WiFi connection attempts to make before giving up. If this is reached, the screen will display an error message and wait for a manual reset.
+- **DEPARTURE_REFRESH_SECONDS**: The number of seconds to wait between data refreshes.
+- **DELAY_PLATFORM_DISPLAY_MS**: The time in milliseconds to display the delay/platform information before switching to a scrolling list of calling points.
+- **CALLING_AT_PAUSE_MS**: The delay in milliseconds between the calling points start to scroll.
+- **CALLING_AT_SCROLL_MS**: The delay in milliseconds between movements of the calling points list.
+- **API_TIMEOUT_SECONDS**: The timeout in seconds for each API request.
+- **ROTATE_SCREEN**: Whether to rotate the screen - in case you want to mount it upside down or with the power connector on the other side.
+- **TIME_SYNC_HOUR_UTC**: The hour in UTC when we sync the time with an NTP server and check if we have started/finished BST.
+
 ## Implementation notes
 
 Train station names are difficult to display on such a small screen, so we need to truncate them. The longest one I've found is "Rhoose Cardiff International Airport"* (34 characters). The OLED screen is 128 pixels wide, and the font is 8 pixels wide, so we can fit 16 characters per line.
