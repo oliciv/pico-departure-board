@@ -35,6 +35,15 @@ class PicoDepartureBoard:
 
         self.show_clock = True
 
+    def _show_message(self, line1, line2=None, line3=None):
+        self.oled.fill(self.oled.black)
+        self.oled.text(line1, 1, 10, self.oled.white)
+        if line2:
+            self.oled.text(line2, 1, 27, self.oled.white)
+        if line3:
+            self.oled.text(line3, 1, 44, self.oled.white)
+        self.oled.show()
+
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
 
@@ -80,22 +89,17 @@ class PicoDepartureBoard:
                 break
             connection_attempt += 1
 
-            self.oled.fill(self.oled.black)
-            self.oled.text("Connecting to", 1, 10, self.oled.white)
-            self.oled.text(ssid, 1, 27, self.oled.white)
-            self.oled.text(f"Attempt {connection_attempt}", 1, 44, self.oled.white)
-            self.oled.show()
+            self._show_message("Connecting to", ssid, f"Attempt {connection_attempt}")
             self.status_led.toggle()
 
             time.sleep(1)
 
-        self.oled.fill(self.oled.black)
-
         if wlan.status() < 0:
-            self.oled.text("WiFi Error", 1, 10, self.oled.white)
-            self.oled.text(f"Attempt {connection_attempt}", 1, 27, self.oled.white)
-            self.oled.text(f"Status: {wlan.status()}", 1, 44, self.oled.white)
-            self.oled.show()
+            self._show_message(
+                "WiFi Error",
+                f"Attempt {connection_attempt}",
+                f"Status: {wlan.status()}",
+            )
             raise Exception("Connection failed")
 
         # Sync clock via NTP now that we have network
@@ -103,6 +107,8 @@ class PicoDepartureBoard:
             ntptime.settime()
         except Exception as e:
             print(f"NTP sync failed: {e}")
+
+        self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
 
         time.sleep(5)
         self.oled.fill(self.oled.black)
