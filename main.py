@@ -15,6 +15,7 @@ class PicoDepartureBoard:
     WIFI_MINIMUM_CONNECTION_ATTEMPTS = 0
     WIFI_MAXIMUM_CONNECTION_ATTEMPTS = 60
     DEPARTURE_REFRESH_SECONDS = 60
+    API_TIMEOUT_SECONDS = 10
 
     def __init__(self):
         self.status_led = Pin("LED", Pin.OUT)
@@ -163,7 +164,9 @@ class PicoDepartureBoard:
         headers = {"Accept": "application/json"}
 
         try:
-            response = urequests.get(url, headers=headers)
+            response = urequests.get(
+                url, headers=headers, timeout=self.API_TIMEOUT_SECONDS
+            )
             if response.status_code != 200:
                 raise Exception(f"API error: {response.status_code}")
         except Exception as e:
