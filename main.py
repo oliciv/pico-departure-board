@@ -98,10 +98,11 @@ class PicoDepartureBoard:
             self.oled.show()
             raise Exception("Connection failed")
 
-        self.oled.text("Pico Depature", 1, 10, self.oled.white)
-        self.oled.text(f"Board v{VERSION}", 1, 27, self.oled.white)
-        self.oled.text(wlan.ifconfig()[0], 1, 44, self.oled.white)
-        self.oled.show()
+        # Sync clock via NTP now that we have network
+        try:
+            ntptime.settime()
+        except Exception as e:
+            print(f"NTP sync failed: {e}")
 
         time.sleep(5)
         self.oled.fill(self.oled.black)
@@ -193,9 +194,8 @@ class PicoDepartureBoard:
         return dest
 
     def _get_current_time(self):
-        # The pico has no real time clock so we'll need to fetch it from a NTP server
+        # NTP is synced once after WiFi connects; just read the local clock here
         # TODO: Timezone (BST/GMT) support
-        ntptime.settime()
         t = time.localtime()
         return "{:02d}:{:02d}".format(t[3], t[4])
 
