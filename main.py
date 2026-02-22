@@ -321,10 +321,13 @@ class PicoDepartureBoard:
         offset = 0
         last_fetch = 0
 
-        key_a = Pin(15, Pin.IN, Pin.PULL_UP)
-        key_b = Pin(17, Pin.IN, Pin.PULL_UP)
-        prev_key_a = 1
-        prev_key_b = 1
+        buttons = {
+            "clock": Pin(15, Pin.IN, Pin.PULL_UP),
+            "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
+        }
+
+        # Default state is pulled up, so 1 = not pressed
+        prev_state = {name: 1 for name in buttons}
 
         while True:
             # Refresh data periodically
@@ -351,21 +354,22 @@ class PicoDepartureBoard:
             ):
                 self.render_departures(services, offset)
 
-            cur_key_a = key_a.value()
-            cur_key_b = key_b.value()
+            # Read all buttons and detect change in state (pressed)
+            pressed = {}
+            for name, pin in buttons.items():
+                cur = pin.value()
+                pressed[name] = cur == 0 and prev_state[name] == 1
+                prev_state[name] = cur
 
-            if cur_key_a == 0 and prev_key_a == 1:
+            if pressed["clock"]:
                 self.show_clock = not self.show_clock
                 self.render_departures(services, offset)
 
-            if cur_key_b == 0 and prev_key_b == 1:
+            if pressed["scroll"]:
                 offset += 1
                 if offset >= len(services):
                     offset = 0
                 self.render_departures(services, offset)
-
-            prev_key_a = cur_key_a
-            prev_key_b = cur_key_b
 
 
 if __name__ == "__main__":
