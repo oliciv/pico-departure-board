@@ -90,6 +90,11 @@ Unplug and replug the Pico. You should see the boot screen, then a WiFi connecti
 - Limit to a specific platform, or destination(s)
 - It could still be smaller...
 - Better error handling!
+- Onboard WiFi configuration
+- Onboard station configuration
+- Onboard API configuration
+- Onboard display configuration (e.g rotation)
+- Rotation
 
 ## License
 
