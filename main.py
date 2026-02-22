@@ -216,6 +216,11 @@ class PicoDepartureBoard:
             etd_total = etd_h * 60 + etd_m
 
             diff = etd_total - std_total
+            # Handle midnight wraparound (e.g. scheduled 23:50, estimated 00:05)
+            if diff < 0:
+                diff += 24 * 60
+            if diff == 0:
+                return "On time"
             return f"+{diff} mins"
         return etd
 
