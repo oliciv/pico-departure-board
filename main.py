@@ -21,7 +21,8 @@ class PicoDepartureBoard:
     API_TIMEOUT_SECONDS = 10
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
-    # noticable/jarring if time has drifted slightly)
+    # noticable/jarring in the middle of the night if time has drifted slightly
+    # and needs to be corrected)
     TIME_SYNC_HOUR_UTC = 2
 
     def __init__(self):
