@@ -288,19 +288,40 @@ class PicoDepartureBoard:
             return f"+{diff} mins"
         return etd
 
-    def render_departures(self, services, offset=0, calling_at_text=None):
-        self.oled.fill(self.oled.black)
+    def render_welcome_screen(self):
+        self.oled.text("Welcome to", 1, 10, self.oled.white)
+        self.oled.text(
+            self._truncate_destination(self.station_name, 16),
+            1,
+            27,
+            self.oled.white,
+        )
+        self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
+        self.oled.show()
 
-        if not services:
-            self.oled.text("Welcome to", 1, 10, self.oled.white)
-            self.oled.text(
-                self._truncate_destination(self.station_name, 16),
-                1,
-                27,
-                self.oled.white,
-            )
+        # If we have no services, it's likely the middle of the night, a day of
+        # engineering works, a particularly quiet station - or some other situation
+        # where it's unlikely that a train will suddenly sneak up on us, so we can
+        # afford to sleep for 5 minutes and check again to see if the situation has
+        # changed. We still update the clock each minute on the minute so it doesn't
+        # look frozen.
+
+        # Initially, sleep until the next minute passes to keep the clock accurate
+        current_seconds = time.localtime()[5]
+        sleep_time = 60 - current_seconds
+
+        for _ in range(5):
+            time.sleep(sleep_time)
+            sleep_time = 60  # from now on, sleep for 60 subsequent seconds
+            self.oled.fill_rect(1, 44, 128, 8, self.oled.black)
             self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
             self.oled.show()
+
+    def render_departures(self, services, offset=0, calling_at_text=None):
+        self.oled.fill(self.oled.black)
+        services = []
+        if not services:
+            self.render_welcome_screen()
             return
 
         num_rows = 2 if self.show_clock else 3
