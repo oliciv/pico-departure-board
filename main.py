@@ -500,6 +500,9 @@ class PicoDepartureBoard:
                 self.update_calling_points(services, offset)
                 self.render_departures(services, offset, self.get_calling_at_text())
 
+            # Sleep to prevent the CPU from constantly spinning in a tight loop
+            time.sleep_ms(250)
+
 
 if __name__ == "__main__":
     pdb = PicoDepartureBoard()
