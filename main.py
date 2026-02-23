@@ -319,7 +319,7 @@ class PicoDepartureBoard:
 
     def render_departures(self, services, offset=0, calling_at_text=None):
         self.oled.fill(self.oled.black)
-        services = []
+
         if not services:
             self.render_welcome_screen()
             return
