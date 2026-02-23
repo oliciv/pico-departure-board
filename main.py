@@ -501,7 +501,7 @@ class PicoDepartureBoard:
                 self.render_departures(services, offset, self.get_calling_at_text())
 
             # Sleep to prevent the CPU from constantly spinning in a tight loop
-            time.sleep_ms(250)
+            time.sleep_ms(50)
 
 
 if __name__ == "__main__":
