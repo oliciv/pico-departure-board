@@ -38,7 +38,6 @@ Create a `api.json` file with the following format:
 ```json
 {
     "api_token": "<your-api-token>",
-    "proxy_url": "<your-proxy-url>",
     "station_code": "<your-station-code>",
     "station_name": "<your-station-name>"
 }
@@ -46,7 +45,7 @@ Create a `api.json` file with the following format:
 
 A list of station codes can be found at https://en.wikipedia.org/wiki/UK_railway_stations
 
-The National Rail API is SOAP, which is not ideal on the Pico for reasons of memory and sanity. So we'll fetch results through a [Huxley2](https://github.com/jpsingleton/Huxley2) proxy. This can run in Docker, Azure or there is a public instance available.
+The board queries the National Rail Darwin OpenLDBWS SOAP API directly. XML responses are parsed using simple string matching, keeping memory usage low enough for the Pico W.
 
 ## Deploying to the Pico
 

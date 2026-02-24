@@ -20,6 +20,7 @@ class PicoDepartureBoard:
     CALLING_AT_SCROLL_MS = 100
     API_TIMEOUT_SECONDS = 10
     ROTATE_SCREEN = False
+    DARWIN_ENDPOINT = "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx"
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
     # noticable/jarring in the middle of the night if time has drifted slightly
@@ -37,10 +38,9 @@ class PicoDepartureBoard:
 
         # Load API credentials
         api_creds = self._load_json_config(
-            "api.json", ["api_token", "proxy_url", "station_code", "station_name"]
+            "api.json", ["api_token", "station_code", "station_name"]
         )
         self.api_token = api_creds["api_token"]
-        self.proxy_url = api_creds["proxy_url"]
         self.station_code = api_creds["station_code"].upper()
         self.station_name = api_creds["station_name"]
 
@@ -72,6 +72,91 @@ class PicoDepartureBoard:
         if line3:
             self.oled.text(line3, 1, 44, self.oled.white)
         self.oled.show()
+
+    def _build_departures_request(self, num_rows=3):
+        return (
+            '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"'
+            ' xmlns:typ="http://thalesgroup.com/RTTI/2013-11-28/Token/types"'
+            ' xmlns:ldb="http://thalesgroup.com/RTTI/2021-11-01/ldb/">'
+            "<soap:Header><typ:AccessToken>"
+            "<typ:TokenValue>{}</typ:TokenValue>"
+            "</typ:AccessToken></soap:Header>"
+            "<soap:Body><ldb:GetDepartureBoardRequest>"
+            "<ldb:numRows>{}</ldb:numRows>"
+            "<ldb:crs>{}</ldb:crs>"
+            "</ldb:GetDepartureBoardRequest></soap:Body>"
+            "</soap:Envelope>"
+        ).format(self.api_token, num_rows, self.station_code)
+
+    def _build_service_request(self, service_id):
+        return (
+            '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"'
+            ' xmlns:typ="http://thalesgroup.com/RTTI/2013-11-28/Token/types"'
+            ' xmlns:ldb="http://thalesgroup.com/RTTI/2021-11-01/ldb/">'
+            "<soap:Header><typ:AccessToken>"
+            "<typ:TokenValue>{}</typ:TokenValue>"
+            "</typ:AccessToken></soap:Header>"
+            "<soap:Body><ldb:GetServiceDetailsRequest>"
+            "<ldb:serviceID>{}</ldb:serviceID>"
+            "</ldb:GetServiceDetailsRequest></soap:Body>"
+            "</soap:Envelope>"
+        ).format(self.api_token, service_id)
+
+    def _find_tag_value(self, xml, tag, start=0):
+        # Find <prefix:tag> or <tag> and extract content up to closing tag
+        # Search for :tag> first (namespaced), then <tag> (unnamespaced)
+        needle = ":" + tag + ">"
+        pos = xml.find(needle, start)
+        if pos < 0:
+            needle = "<" + tag + ">"
+            pos = xml.find(needle, start)
+            if pos < 0:
+                return None, start
+        val_start = pos + len(needle)
+        # Find closing tag - look for </...tag>
+        end = xml.find(tag + ">", val_start)
+        if end < 0:
+            return None, start
+        # Walk back to find the </  or </:
+        val_end = end
+        while val_end > val_start and xml[val_end - 1] != "<" and xml[val_end - 1] != ":":
+            val_end -= 1
+        if val_end <= val_start:
+            return None, start
+        # val_end - 1 is either < or :, we want everything before that
+        if xml[val_end - 1] == ":":
+            # </prefix:tag> - go back one more to find <
+            val_end -= 1
+            while val_end > val_start and xml[val_end - 1] != "<":
+                val_end -= 1
+        # val_end - 1 should be '<' now (the '<' of the closing tag)
+        value = xml[val_start:val_end - 1]
+        after = end + len(tag) + 1
+        return value, after
+
+    def _find_all_blocks(self, xml, tag):
+        pos = 0
+        while True:
+            # Find opening tag with namespace prefix or without
+            needle = ":" + tag + ">"
+            start = xml.find(needle, pos)
+            if start < 0:
+                needle = "<" + tag + ">"
+                start = xml.find(needle, pos)
+                if start < 0:
+                    break
+            block_start = start + len(needle)
+            # Find closing tag
+            close_needle = tag + ">"
+            end = xml.find(close_needle, block_start)
+            # Walk backwards to find </ for the closing tag
+            scan = end - 1
+            while scan >= block_start and xml[scan] != "<":
+                scan -= 1
+            if scan < block_start:
+                break
+            yield xml[block_start:scan]
+            pos = end + len(close_needle)
 
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
@@ -138,17 +223,16 @@ class PicoDepartureBoard:
         self.oled.fill(self.oled.black)
 
     def fetch_departures(self, num_rows=3):
-        url = (
-            f"{self.proxy_url}/departures/{self.station_code}"
-            f"?accessToken={self.api_token}"
-        )
-        print(f"Fetching: {url}")
-
-        headers = {"Accept": "application/json"}
+        print("Fetching departures from Darwin")
+        body = self._build_departures_request(num_rows)
+        headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
 
         try:
-            response = urequests.get(
-                url, headers=headers, timeout=self.API_TIMEOUT_SECONDS
+            response = urequests.post(
+                self.DARWIN_ENDPOINT,
+                data=body,
+                headers=headers,
+                timeout=self.API_TIMEOUT_SECONDS,
             )
             if response.status_code != 200:
                 raise Exception(f"API error: {response.status_code}")
@@ -157,21 +241,52 @@ class PicoDepartureBoard:
             self._show_message("API Error", "Status", str(e))
             time.sleep(5)
             return None
+
         gc.collect()
-        data = response.json()
+        xml = response.text
         response.close()
         gc.collect()
-        return data
+
+        services = []
+        for block in self._find_all_blocks(xml, "service"):
+            std, _ = self._find_tag_value(block, "std")
+            etd, _ = self._find_tag_value(block, "etd")
+            platform, _ = self._find_tag_value(block, "platform")
+            service_id, _ = self._find_tag_value(block, "serviceID")
+
+            # Destination name is nested inside a destination > location block
+            dest_name = None
+            for dest_block in self._find_all_blocks(block, "destination"):
+                dest_name, _ = self._find_tag_value(dest_block, "locationName")
+                if not dest_name:
+                    dest_name, _ = self._find_tag_value(dest_block, "name")
+                break
+
+            service = {
+                "std": std or "??:??",
+                "etd": etd or "",
+                "serviceID": service_id or "",
+                "destination": [{"locationName": dest_name or ""}],
+            }
+            if platform:
+                service["platform"] = platform
+            services.append(service)
+
+        if services:
+            return {"trainServices": services}
+        return {"trainServices": None}
 
     def fetch_calling_points(self, service_id):
-        url = f"{self.proxy_url}/service/{service_id}" f"?accessToken={self.api_token}"
-        print(f"Fetching calling points: {url}")
-
-        headers = {"Accept": "application/json"}
+        print(f"Fetching calling points for {service_id}")
+        body = self._build_service_request(service_id)
+        headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
 
         try:
-            response = urequests.get(
-                url, headers=headers, timeout=self.API_TIMEOUT_SECONDS
+            response = urequests.post(
+                self.DARWIN_ENDPOINT,
+                data=body,
+                headers=headers,
+                timeout=self.API_TIMEOUT_SECONDS,
             )
             if response.status_code != 200:
                 return []
@@ -180,15 +295,19 @@ class PicoDepartureBoard:
             return []
 
         gc.collect()
-        data = response.json()
+        xml = response.text
         response.close()
         gc.collect()
 
-        try:
-            points = data["subsequentCallingPoints"][0]["callingPoint"]
-            return [p["locationName"] for p in points]
-        except (KeyError, IndexError):
-            return []
+        # Find the subsequentCallingPoints section
+        points = []
+        for scp_block in self._find_all_blocks(xml, "subsequentCallingPoints"):
+            for cp_block in self._find_all_blocks(scp_block, "callingPoint"):
+                name, _ = self._find_tag_value(cp_block, "locationName")
+                if name:
+                    points.append(name)
+            break  # only first subsequentCallingPoints list
+        return points
 
     def _truncate_destination(self, dest, max_chars):
         # remove vowels and spaces from everything except the last char
