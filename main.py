@@ -52,7 +52,7 @@ class PicoDepartureBoard:
         self.show_clock = True
 
         self.buttons = {
-            "clock": Pin(16, Pin.IN, Pin.PULL_UP),
+            "clock": Pin(15, Pin.IN, Pin.PULL_UP),
             "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
         }
 
