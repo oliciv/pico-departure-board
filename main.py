@@ -7,6 +7,8 @@ import socket
 from oled_lib import OLED_1inch3
 from machine import Pin, reset
 import urequests
+from machine import reset
+from captive_portal import CaptivePortal
 
 VERSION = "0.0.1"
 
@@ -577,123 +579,19 @@ class PicoDepartureBoard:
         # Show a 16-char window scrolling left through the string
         return self._calling_at_str[self._calling_at_scroll_offset :][:16]
 
-    def _handle_dns(self, dns_sock, ap_ip):
-        try:
-            data, addr = dns_sock.recvfrom(512)
-        except OSError:
-            return
-
-        # Build a minimal DNS response pointing all queries to ap_ip
-        # Transaction ID (2 bytes) + flags (2 bytes): standard response, no error
-        response = data[:2] + b"\x81\x80"
-        # Questions=1, Answers=1, Auth=0, Additional=0
-        response += b"\x00\x01\x00\x01\x00\x00\x00\x00"
-        # Copy the original question section
-        # Skip header (12 bytes), walk through the question name
-        pos = 12
-        while pos < len(data) and data[pos] != 0:
-            pos += data[pos] + 1
-        pos += 1  # skip null terminator
-        pos += 4  # skip QTYPE and QCLASS
-        response += data[12:pos]
-        # Answer section: pointer to name in question, type A, class IN, TTL 60, 4-byte
-        # IP
-        response += b"\xc0\x0c"  # name pointer to offset 12
-        response += b"\x00\x01\x00\x01"  # type A, class IN
-        response += b"\x00\x00\x00\x3c"  # TTL 60 seconds
-        response += b"\x00\x04"  # data length 4
-        response += bytes(int(b) for b in ap_ip.split("."))
-
-        dns_sock.sendto(response, addr)
-
-    def _serve_http(self, client):
-        try:
-            client.setblocking(True)
-            # Read full headers
-            request = b""
-            while b"\r\n\r\n" not in request:
-                chunk = client.recv(512)
-                if not chunk:
-                    break
-                request += chunk
-            print(request)  # debug
-
-            body = "<html><body><h1>Hello World</h1></body></html>"
-            response = (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html\r\n"
-                f"Content-Length: {len(body)}\r\n"
-                "Connection: close\r\n"
-                "\r\n" + body
-            )
-            client.send(response.encode())  # explicit bytes
-        except Exception as e:
-            print(f"HTTP error: {e}")
-        finally:
-            client.close()
-
     def start_setup_mode(self):
         self._show_message("Entering", "setup mode...")
 
-        # Deactivate station WiFi
-        sta = network.WLAN(network.STA_IF)
-        sta.active(False)
+        portal = CaptivePortal(ssid=self.SETUP_SSID, port=self.SETUP_PORT)
 
-        # Start access point
-        ap = network.WLAN(network.AP_IF)
-        ap.active(True)
-        ap.config(essid=self.SETUP_SSID, security=0)
+        self._show_message("Setup:Connect to", self.SETUP_SSID, "http://pdb.setup")
+        portal.start(
+            should_exit=lambda: any(pin.value() == 0 for pin in self.buttons.values())
+        )
 
-        # Wait for AP to become active
-        for _ in range(20):
-            if ap.active():
-                break
-            time.sleep_ms(250)
-
-        ap_ip = ap.ifconfig()[0]
-        self._show_message("Setup mode", self.SETUP_SSID, ap_ip)
-        print(f"AP started: {self.SETUP_SSID} @ {ap_ip}")
-
-        # DNS socket (UDP port 53)
-        dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        dns_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        dns_sock.bind(("0.0.0.0", 53))
-        dns_sock.setblocking(False)
-
-        # HTTP socket (TCP port 80)
-        http_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        http_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        http_sock.bind(("0.0.0.0", self.SETUP_PORT))
-        http_sock.listen(1)
-        http_sock.setblocking(False)
-
-        try:
-            while True:
-                # Handle DNS requests
-                self._handle_dns(dns_sock, ap_ip)
-
-                # Handle HTTP requests
-                try:
-                    client, _ = http_sock.accept()
-                    self._serve_http(client)
-                except OSError:
-                    pass
-
-                # Check if either button is pressed to exit
-                if (
-                    self.buttons["clock"].value() == 0
-                    or self.buttons["scroll"].value() == 0
-                ):
-                    break
-
-                time.sleep_ms(50)
-        finally:
-            dns_sock.close()
-            http_sock.close()
-            ap.active(False)
-            self._show_message("Setup complete", "Restarting...")
-            time.sleep(3)
-            reset()
+        self._show_message("Setup complete", "Restarting...")
+        time.sleep(3)
+        reset()
 
     def show_departure_board(self):
         print("Showing departure board")
