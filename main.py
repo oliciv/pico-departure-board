@@ -3,8 +3,9 @@ import network
 import ntptime
 import time
 import gc
+import socket
 from oled_lib import OLED_1inch3
-from machine import Pin
+from machine import Pin, reset
 import urequests
 
 VERSION = "0.0.1"
@@ -21,6 +22,8 @@ class PicoDepartureBoard:
     API_TIMEOUT_SECONDS = 10
     ROTATE_SCREEN = False
     DARWIN_ENDPOINT = "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx"
+    SETUP_SSID = "PicoDepartureBoard"
+    SETUP_PORT = 80
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
     # noticable/jarring in the middle of the night if time has drifted slightly
@@ -45,6 +48,11 @@ class PicoDepartureBoard:
         self.station_name = api_creds["station_name"]
 
         self.show_clock = True
+
+        self.buttons = {
+            "clock": Pin(16, Pin.IN, Pin.PULL_UP),
+            "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
+        }
 
     def _load_json_config(self, filename, required_keys):
         try:
@@ -232,7 +240,7 @@ class PicoDepartureBoard:
         self.oled.fill(self.oled.black)
 
     def fetch_departures(self, num_rows=3):
-        print("Fetching departures from Darwin")
+        print("Fetching departures from National Rail API")
         body = self._build_departures_request(num_rows)
         headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
 
@@ -530,7 +538,10 @@ class PicoDepartureBoard:
             print(f"Calling at: {self._calling_at_str}")
 
     def advance_calling_at(self):
-        """Advance the calling-at animation state. Returns True if display needs updating."""
+        """
+        Advance the calling-at animation state. Returns True if
+        display needs updating.
+        """
         if not self._calling_at_str:
             return False
 
@@ -566,6 +577,124 @@ class PicoDepartureBoard:
         # Show a 16-char window scrolling left through the string
         return self._calling_at_str[self._calling_at_scroll_offset :][:16]
 
+    def _handle_dns(self, dns_sock, ap_ip):
+        try:
+            data, addr = dns_sock.recvfrom(512)
+        except OSError:
+            return
+
+        # Build a minimal DNS response pointing all queries to ap_ip
+        # Transaction ID (2 bytes) + flags (2 bytes): standard response, no error
+        response = data[:2] + b"\x81\x80"
+        # Questions=1, Answers=1, Auth=0, Additional=0
+        response += b"\x00\x01\x00\x01\x00\x00\x00\x00"
+        # Copy the original question section
+        # Skip header (12 bytes), walk through the question name
+        pos = 12
+        while pos < len(data) and data[pos] != 0:
+            pos += data[pos] + 1
+        pos += 1  # skip null terminator
+        pos += 4  # skip QTYPE and QCLASS
+        response += data[12:pos]
+        # Answer section: pointer to name in question, type A, class IN, TTL 60, 4-byte
+        # IP
+        response += b"\xc0\x0c"  # name pointer to offset 12
+        response += b"\x00\x01\x00\x01"  # type A, class IN
+        response += b"\x00\x00\x00\x3c"  # TTL 60 seconds
+        response += b"\x00\x04"  # data length 4
+        response += bytes(int(b) for b in ap_ip.split("."))
+
+        dns_sock.sendto(response, addr)
+
+    def _serve_http(self, client):
+        try:
+            client.setblocking(True)
+            # Read full headers
+            request = b""
+            while b"\r\n\r\n" not in request:
+                chunk = client.recv(512)
+                if not chunk:
+                    break
+                request += chunk
+            print(request)  # debug
+
+            body = "<html><body><h1>Hello World</h1></body></html>"
+            response = (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/html\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                "Connection: close\r\n"
+                "\r\n" + body
+            )
+            client.send(response.encode())  # explicit bytes
+        except Exception as e:
+            print(f"HTTP error: {e}")
+        finally:
+            client.close()
+
+    def start_setup_mode(self):
+        self._show_message("Entering", "setup mode...")
+
+        # Deactivate station WiFi
+        sta = network.WLAN(network.STA_IF)
+        sta.active(False)
+
+        # Start access point
+        ap = network.WLAN(network.AP_IF)
+        ap.active(True)
+        ap.config(essid=self.SETUP_SSID, security=0)
+
+        # Wait for AP to become active
+        for _ in range(20):
+            if ap.active():
+                break
+            time.sleep_ms(250)
+
+        ap_ip = ap.ifconfig()[0]
+        self._show_message("Setup mode", self.SETUP_SSID, ap_ip)
+        print(f"AP started: {self.SETUP_SSID} @ {ap_ip}")
+
+        # DNS socket (UDP port 53)
+        dns_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        dns_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        dns_sock.bind(("0.0.0.0", 53))
+        dns_sock.setblocking(False)
+
+        # HTTP socket (TCP port 80)
+        http_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        http_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        http_sock.bind(("0.0.0.0", self.SETUP_PORT))
+        http_sock.listen(1)
+        http_sock.setblocking(False)
+
+        try:
+            while True:
+                # Handle DNS requests
+                self._handle_dns(dns_sock, ap_ip)
+
+                # Handle HTTP requests
+                try:
+                    client, _ = http_sock.accept()
+                    self._serve_http(client)
+                except OSError:
+                    pass
+
+                # Check if either button is pressed to exit
+                if (
+                    self.buttons["clock"].value() == 0
+                    or self.buttons["scroll"].value() == 0
+                ):
+                    break
+
+                time.sleep_ms(50)
+        finally:
+            dns_sock.close()
+            http_sock.close()
+            ap.active(False)
+            self._show_message("Setup complete", "Restarting...")
+            time.sleep(3)
+            reset()
+
     def show_departure_board(self):
         print("Showing departure board")
 
@@ -583,13 +712,8 @@ class PicoDepartureBoard:
         self._calling_at_phase_start = time.ticks_ms()
         last_render = time.ticks_ms()
 
-        buttons = {
-            "clock": Pin(15, Pin.IN, Pin.PULL_UP),
-            "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
-        }
-
         # Default state is pulled up, so 1 = not pressed
-        prev_state = {name: 1 for name in buttons}
+        prev_state = {name: 1 for name in self.buttons}
 
         while True:
             now = time.time()
@@ -633,7 +757,7 @@ class PicoDepartureBoard:
 
             # Read all buttons and detect change in state (pressed)
             pressed = {}
-            for name, pin in buttons.items():
+            for name, pin in self.buttons.items():
                 cur = pin.value()
                 pressed[name] = cur == 0 and prev_state[name] == 1
                 prev_state[name] = cur
@@ -648,6 +772,13 @@ class PicoDepartureBoard:
                     offset = 0
                 self.update_calling_points(services, offset)
                 self.render_departures(services, offset, self.get_calling_at_text())
+
+            # Both buttons held simultaneously -> enter setup mode
+            if (
+                self.buttons["clock"].value() == 0
+                and self.buttons["scroll"].value() == 0
+            ):
+                self.start_setup_mode()
 
             # Sleep to prevent the CPU from constantly spinning in a tight loop
             time.sleep_ms(50)
