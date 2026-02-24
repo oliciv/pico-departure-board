@@ -119,7 +119,9 @@ class PicoDepartureBoard:
             return None, start
         # Walk back to find the </  or </:
         val_end = end
-        while val_end > val_start and xml[val_end - 1] != "<" and xml[val_end - 1] != ":":
+        while (
+            val_end > val_start and xml[val_end - 1] != "<" and xml[val_end - 1] != ":"
+        ):
             val_end -= 1
         if val_end <= val_start:
             return None, start
@@ -130,7 +132,14 @@ class PicoDepartureBoard:
             while val_end > val_start and xml[val_end - 1] != "<":
                 val_end -= 1
         # val_end - 1 should be '<' now (the '<' of the closing tag)
-        value = xml[val_start:val_end - 1]
+        value = xml[val_start : val_end - 1]
+        # Unescape XML entities
+        if "&" in value:
+            value = value.replace("&amp;", "&")
+            value = value.replace("&lt;", "<")
+            value = value.replace("&gt;", ">")
+            value = value.replace("&apos;", "'")
+            value = value.replace("&quot;", '"')
         after = end + len(tag) + 1
         return value, after
 
