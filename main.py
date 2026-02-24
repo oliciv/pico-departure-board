@@ -3,9 +3,9 @@ import network
 import ntptime
 import time
 import gc
-import socket
+import rp2
 from oled_lib import OLED_1inch3
-from machine import Pin, reset
+from machine import Pin, unique_id
 import urequests
 from machine import reset
 from captive_portal import CaptivePortal
@@ -24,7 +24,7 @@ class PicoDepartureBoard:
     API_TIMEOUT_SECONDS = 10
     ROTATE_SCREEN = False
     DARWIN_ENDPOINT = "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx"
-    SETUP_SSID = "PicoDepartureBoard"
+    SETUP_SSID = f"PDBSetup-{unique_id().hex()[-4:]}"
     SETUP_PORT = 80
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
