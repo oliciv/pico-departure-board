@@ -649,6 +649,11 @@ class PicoDepartureBoard:
                 file_data[filename][key] = value
 
             for filename, data in file_data.items():
+                # Restore original types for non-string values
+                existing = self._read_config_file(filename)
+                for key, value in data.items():
+                    if key in existing and isinstance(existing[key], bool):
+                        data[key] = value == "true"
                 with open(filename, "w") as f:
                     json.dump(data, f)
 
@@ -667,17 +672,28 @@ class PicoDepartureBoard:
             for key, value in data.items():
                 field_name = f"{filename}:{key}"
                 label = " ".join(w[0].upper() + w[1:] for w in key.split("_"))
-                escaped_value = (
-                    str(value)
-                    .replace("&", "&amp;")
-                    .replace('"', "&quot;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                )
-                form_fields += (
-                    f"<label>{label}</label>"
-                    f"<input type='text' name='{field_name}' value=\"{escaped_value}\">"
-                )
+                if isinstance(value, bool):
+                    true_sel = " selected" if value else ""
+                    false_sel = "" if value else " selected"
+                    form_fields += (
+                        f"<label>{label}</label>"
+                        f"<select name='{field_name}'>"
+                        f"<option value='true'{true_sel}>True</option>"
+                        f"<option value='false'{false_sel}>False</option>"
+                        f"</select>"
+                    )
+                else:
+                    escaped_value = (
+                        str(value)
+                        .replace("&", "&amp;")
+                        .replace('"', "&quot;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                    )
+                    form_fields += (
+                        f"<label>{label}</label>"
+                        f"<input type='text' name='{field_name}' value=\"{escaped_value}\">"
+                    )
 
         return self._render_template(
             "setup_form.html", {"{{FORM_FIELDS}}": form_fields}
