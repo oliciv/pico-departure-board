@@ -67,7 +67,6 @@ class CaptivePortal:
                     self._serve_http(client)
 
                 if should_exit():
-                    time.sleep(10)
                     break
 
                 time.sleep_ms(50)
