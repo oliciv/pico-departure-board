@@ -2,6 +2,5 @@
     "api_token": "",
     "station_code": "",
     "station_name": "",
-    "setup_on_boot": false,
     "show_splash_screens": true
 }
