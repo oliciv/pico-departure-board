@@ -15,37 +15,12 @@ The screen has two buttons which are used for controls:
 
 - **"KEY0"**: Toggle the clock display on/off
 - **"KEY1"**: Scroll through later departures
+- **Both buttons held**: Enter setup mode
 
 ## Initial Setup
 
-### WiFi Credentials
+### API Token
 
-Create a `wifi.json` file with the following format:
-
-```json
-{
-    "ssid": "<your-ssid>",
-    "password": "<your-password>"
-}
-```
-
-### API Credentials
-
-Sign up at https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/
-
-Create a `api.json` file with the following format:
-
-```json
-{
-    "api_token": "<your-api-token>",
-    "station_code": "<your-station-code>",
-    "station_name": "<your-station-name>"
-}
-```
-
-A list of station codes can be found at https://en.wikipedia.org/wiki/UK_railway_stations
-
-The board queries the National Rail Darwin OpenLDBWS SOAP API directly. XML responses are parsed using simple string matching, keeping memory usage low enough for the Pico W.
 
 ## Deploying to the Pico
 
@@ -69,9 +44,50 @@ This uploads all project files to the Pico's filesystem. The board will run `mai
 
 Alternatively, you can use [Thonny](https://thonny.org/) or [mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html) to copy files manually.
 
-### 3. Verify
+### 3. Configure
 
-Unplug and replug the Pico. You should see the boot screen, then a WiFi connection message, followed by live departures. If a config file is missing or invalid, an error message will be shown on the display.
+Whichever method you choose, you'll need the following infromation:
+
+- An API token from https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/
+- A station code from https://en.wikipedia.org/wiki/UK_railway_stations
+- Your WiFi credentials
+
+#### Option A: WiFi
+
+On first boot, the board will start in setup mode automatically. You can also enter setup mode at any time by holding both buttons simultaneously.
+
+1. Connect to the **PDBSetup-XXXX** WiFi network from your phone or laptop.
+2. A captive portal page should open automatically. If not, navigate to any non-HTTPS URL in your browser. (e.g http://pdb.setup)
+3. Fill in your WiFi credentials, API token, station code, and station name. (The name will be displayed when there are no departures to show)
+4. Press **Save**. The board will restart and connect to your WiFi.
+
+#### Option B: Edit JSON files manually
+
+If you prefer, you can edit the config files directly on the Pico's filesystem or before uploading the code.
+
+`wifi.json`:
+
+```json
+{
+    "ssid": "<your-ssid>",
+    "password": "<your-password>"
+}
+```
+
+`api.json`:
+
+```json
+{
+    "api_token": "<your-api-token>",
+    "station_code": "<your-station-code>",
+    "station_name": "<your-station-name>",
+    "show_splash_screens": true
+}
+```
+
+### 4. Enjoy
+
+The next time the board boots, you should see the boot screen, then a WiFi connection message, followed by live departures for your chosen station. If a config file is missing or invalid, an error message will be shown on the display.
 
 ## Constants
 
@@ -103,9 +119,10 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 - Limit to a specific platform, or destination(s)
 - It could still be smaller...
 - Better error handling!
-- Onboard WiFi configuration
-- Onboard station configuration
-- Onboard API configuration
+- ~~Onboard WiFi configuration without having to write a file to the Pico~~ Done! Captive portal setup mode.
+- ~~Onboard station configuration~~ Done!
+- ~~Onboard API configuration (Maybe press both buttons to enter this mode)~~ Done!
+- Demo mode (No internet connection required, show an example departure board with times based on the current time)
 
 ## License
 
