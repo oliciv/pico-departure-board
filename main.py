@@ -608,15 +608,11 @@ class PicoDepartureBoard:
                 html = html.replace(key, value)
         return html
 
-    def _setup_debug(self, msg):
-        self._show_message("Setup debug:", msg)
-
     def _setup_http_handler(self, method, path, body):
+        gc.collect()
         config_files = ["wifi.json", "api.json"]
-        self._setup_debug(f"{method} {path}")
 
         if method == "POST" and path == "/":
-            self._setup_debug("Parsing body...")
             # Parse URL-encoded form body
             fields = {}
             if body:
@@ -638,16 +634,15 @@ class PicoDepartureBoard:
                     file_data[filename] = {}
                 file_data[filename][key] = value
 
-            self._setup_debug("Writing files...")
             for filename, data in file_data.items():
                 with open(filename, "w") as f:
                     json.dump(data, f)
 
-            self._setup_debug("Loading template")
+            self._setup_saved = True
+            gc.collect()
             return self._render_template("setup_success.html")
 
         # GET: render the config form
-        self._setup_debug("Building form...")
         form_fields = ""
         for filename in config_files:
             data = self._read_config_file(filename)
@@ -670,7 +665,6 @@ class PicoDepartureBoard:
                     f"<input type='text' name='{field_name}' value=\"{escaped_value}\">"
                 )
 
-        self._setup_debug("Loading template")
         return self._render_template(
             "setup_form.html", {"{{FORM_FIELDS}}": form_fields}
         )
@@ -678,6 +672,8 @@ class PicoDepartureBoard:
     def start_setup_mode(self):
         self._show_message("Entering", "setup mode...")
 
+        gc.collect()
+        self._setup_saved = False
         portal = CaptivePortal(
             ssid=self.SETUP_SSID,
             port=self.SETUP_PORT,
@@ -686,7 +682,8 @@ class PicoDepartureBoard:
 
         self._show_message("Setup:Connect to", self.SETUP_SSID, "http://pdb.setup")
         portal.start(
-            should_exit=lambda: any(pin.value() == 0 for pin in self.buttons.values())
+            should_exit=lambda: self._setup_saved
+            or any(pin.value() == 0 for pin in self.buttons.values())
         )
 
         self._show_message("Setup complete", "Restarting...")

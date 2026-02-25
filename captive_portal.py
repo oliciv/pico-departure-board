@@ -1,3 +1,4 @@
+import gc
 import network
 import socket
 import time
@@ -9,19 +10,18 @@ class CaptivePortal:
         """
         ssid: SSID to use for the access point
         port: port to listen on for HTTP requests
-        http_handler: optional callback(method, path) -> str (HTML body).
+        http_handler: optional callback(method, path, body) -> str (HTML body).
                       If None, a default page is served.
         """
         self.ssid = ssid
         self.port = port
         self._http_handler = http_handler or self._default_http_handler
 
-    def start(self, should_exit=None):
+    def start(self, should_exit=lambda: False):
         """
         Start the captive portal. Blocks until should_exit() returns True.
 
         should_exit: callable returning True when the portal should stop.
-                     If None, runs forever.
 
         Returns the AP IP address that was used.
         """
@@ -66,7 +66,8 @@ class CaptivePortal:
                 if client:
                     self._serve_http(client)
 
-                if should_exit and should_exit():
+                if should_exit():
+                    time.sleep(10)
                     break
 
                 time.sleep_ms(50)
@@ -110,7 +111,6 @@ class CaptivePortal:
     def _serve_http(self, client):
         try:
             client.settimeout(5)
-            print("HTTP: reading request...")
             request = b""
             while b"\r\n\r\n" not in request:
                 chunk = client.recv(512)
@@ -123,20 +123,17 @@ class CaptivePortal:
             parts = request_line.split(" ")
             method = parts[0] if len(parts) >= 1 else "GET"
             path = parts[1] if len(parts) >= 2 else "/"
-            print(f"HTTP: {method} {path}")
 
             # Read POST body if Content-Length header is present
             post_body = ""
-            if method == "POST":
+            if method == "POST" and path == "/":
                 headers_part = request.split(b"\r\n\r\n", 1)[0].decode()
                 content_length = 0
                 for line in headers_part.split("\r\n"):
                     if line.lower().startswith("content-length:"):
                         content_length = int(line.split(":", 1)[1].strip())
                         break
-                print(f"HTTP: reading POST body ({content_length} bytes)")
                 if content_length > 0:
-                    # Some body bytes may already be in the buffer after headers
                     body_so_far = request.split(b"\r\n\r\n", 1)[1]
                     while len(body_so_far) < content_length:
                         chunk = client.recv(512)
@@ -145,22 +142,21 @@ class CaptivePortal:
                         body_so_far += chunk
                     post_body = body_so_far[:content_length].decode()
 
-            print("HTTP: calling handler...")
-            body = self._http_handler(method, path, post_body)
-            print(f"HTTP: handler returned {len(body)} bytes")
+            request = None
+            gc.collect()
+
+            body_bytes = self._http_handler(method, path, post_body).encode()
+            post_body = None
+            gc.collect()
 
             header = (
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/html\r\n"
-                f"Content-Length: {len(body)}\r\n"
+                f"Content-Length: {len(body_bytes)}\r\n"
                 "Connection: close\r\n"
                 "\r\n"
             )
-            print("HTTP: sending headers...")
-            client.sendall(header.encode())
-            print("HTTP: sending body...")
-            client.sendall(body.encode())
-            print("HTTP: response sent")
+            client.sendall(header.encode() + body_bytes)
         except Exception as e:
             print(f"HTTP error: {e}")
         finally:
