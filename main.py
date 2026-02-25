@@ -655,13 +655,16 @@ class PicoDepartureBoard:
                 file_data[filename][key] = value
 
             for filename, data in file_data.items():
-                # Restore original types for non-string values
                 existing = self._read_config_file(filename)
                 for key, value in data.items():
                     if key in existing and isinstance(existing[key], bool):
                         data[key] = value == "true"
+                    elif "password" in key and value == "":
+                        data[key] = existing.get(key, "")
+                # Merge with existing to preserve any keys not in the form
+                existing.update(data)
                 with open(filename, "w") as f:
-                    json.dump(data, f)
+                    json.dump(existing, f)
 
             self._setup_saved = True
             gc.collect()
