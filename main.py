@@ -47,7 +47,6 @@ class PicoDepartureBoard:
                 "api_token",
                 "station_code",
                 "station_name",
-                "setup_on_boot",
                 "show_splash_screens",
             ],
         )
@@ -63,12 +62,7 @@ class PicoDepartureBoard:
             "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
         }
 
-        if (
-            self.api_token == ""
-            or self.station_code == ""
-            or self.station_name == ""
-            or api_creds["setup_on_boot"]
-        ):
+        if self.api_token == "" or self.station_code == "" or self.station_name == "":
             self.start_setup_mode()
 
     def _load_json_config(self, filename, required_keys):
