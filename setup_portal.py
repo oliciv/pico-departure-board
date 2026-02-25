@@ -49,7 +49,15 @@ class SetupPortal:
                 for key, value in data.items():
                     if key in existing and isinstance(existing[key], bool):
                         data[key] = value == "true"
-                    elif "password" in key and value == "":
+                    elif (
+                        any(
+                            restricted_name in key
+                            for restricted_name in ["password", "token"]
+                        )
+                        and value == ""
+                    ):
+                        # Don't force the user to enter a password/token - if they
+                        # leave it blank, we'll just keep the existing value
                         data[key] = existing.get(key, "")
                 existing.update(data)
                 with open(filename, "w") as f:
@@ -79,7 +87,9 @@ class SetupPortal:
                         f"<option value='false'{false_sel}>False</option>"
                         f"</select>"
                     )
-                elif "password" in key:
+                elif any(
+                    restricted_name in key for restricted_name in ["password", "token"]
+                ):
                     form_fields += (
                         f"<label>{label}</label>"
                         f"<input type='password' name='{field_name}' "
