@@ -688,6 +688,12 @@ class PicoDepartureBoard:
                         f"<option value='false'{false_sel}>False</option>"
                         f"</select>"
                     )
+                elif "password" in key:
+                    form_fields += (
+                        f"<label>{label}</label>"
+                        f"<input type='password' name='{field_name}' "
+                        f"placeholder='{'Set' if value else 'Not set'}'>"
+                    )
                 else:
                     escaped_value = (
                         str(value)
