@@ -43,7 +43,13 @@ class PicoDepartureBoard:
 
         # Load API credentials
         api_creds = self._load_json_config(
-            "api.json", ["api_token", "station_code", "station_name"]
+            "api.json",
+            [
+                "api_token",
+                "station_code",
+                "station_name",
+                "setup_on_boot",
+            ],
         )
         self.api_token = api_creds["api_token"]
         self.station_code = api_creds["station_code"].upper()
@@ -55,6 +61,14 @@ class PicoDepartureBoard:
             "clock": Pin(15, Pin.IN, Pin.PULL_UP),
             "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
         }
+
+        if (
+            self.api_token == ""
+            or self.station_code == ""
+            or self.station_name == ""
+            or api_creds["setup_on_boot"]
+        ):
+            self.start_setup_mode()
 
     def _load_json_config(self, filename, required_keys):
         try:
