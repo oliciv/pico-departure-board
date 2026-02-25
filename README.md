@@ -120,6 +120,12 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 - ~~Onboard API configuration (Maybe press both buttons to enter this mode)~~ Done!
 - Demo mode (No internet connection required, show an example departure board with times based on the current time)
 
+## Author
+
+Created by [Oli Allen](https://oliallen.com). Read more about this project on [my blog](https://www.oliciv.net/pico-departure-board).
+
+- GitHub: [oliciv/pico-departure-board](https://github.com/oliciv/pico-departure-board)
+
 ## License
 
 This project is licensed under the terms of the GNU General Public License v3.0. It includes code from the following sources:
