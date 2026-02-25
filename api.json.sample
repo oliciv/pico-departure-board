@@ -1,5 +1,7 @@
 {
     "api_token": "<your-api-token>",
     "station_code": "<your-station-code>",
-    "station_name": "<your-station-name>"
+    "station_name": "<your-station-name>",
+    "setup_on_boot": true,
+    "show_splash_screens": true
 }

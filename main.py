@@ -48,11 +48,13 @@ class PicoDepartureBoard:
                 "station_code",
                 "station_name",
                 "setup_on_boot",
+                "show_splash_screens",
             ],
         )
         self.api_token = api_creds["api_token"]
         self.station_code = api_creds["station_code"].upper()
         self.station_name = api_creds["station_name"]
+        self.show_splash_screens = api_creds["show_splash_screens"]
 
         self.show_clock = True
 
@@ -193,6 +195,9 @@ class PicoDepartureBoard:
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
 
+        if not self.show_splash_screens:
+            return
+
         self.oled.text("PDB", 5, 5, self.oled.white)
         self.oled.text(VERSION, 128 - 5 - len(VERSION) * 8, 64 - 10, self.oled.white)
 
@@ -249,8 +254,10 @@ class PicoDepartureBoard:
 
         self.sync_time()
 
-        self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
+        if not self.show_splash_screens:
+            return
 
+        self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
         time.sleep(5)
         self.oled.fill(self.oled.black)
 
