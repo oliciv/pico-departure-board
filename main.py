@@ -3,7 +3,6 @@ import network
 import ntptime
 import time
 import gc
-import rp2
 from oled_lib import OLED_1inch3
 from machine import Pin, unique_id
 import urequests
