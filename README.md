@@ -19,12 +19,8 @@ The screen has two buttons which are used for controls:
 
 ## Initial Setup
 
-### API Token
-
 
 ## Deploying to the Pico
-
-After following the initial setup instructions, you can deploy the code to the Pico.
 
 ### 1. Install MicroPython firmware
 
