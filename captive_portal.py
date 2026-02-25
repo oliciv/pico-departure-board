@@ -61,9 +61,10 @@ class CaptivePortal:
 
                 try:
                     client, _ = http_sock.accept()
-                    self._serve_http(client)
                 except OSError:
-                    pass
+                    client = None
+                if client:
+                    self._serve_http(client)
 
                 if should_exit and should_exit():
                     break
@@ -103,12 +104,13 @@ class CaptivePortal:
         dns_sock.sendto(response, addr)
 
     @staticmethod
-    def _default_http_handler(method, path):
+    def _default_http_handler(method, path, body):
         return "<html><body><h1>Setup</h1></body></html>"
 
     def _serve_http(self, client):
         try:
-            client.setblocking(True)
+            client.settimeout(5)
+            print("HTTP: reading request...")
             request = b""
             while b"\r\n\r\n" not in request:
                 chunk = client.recv(512)
@@ -121,17 +123,44 @@ class CaptivePortal:
             parts = request_line.split(" ")
             method = parts[0] if len(parts) >= 1 else "GET"
             path = parts[1] if len(parts) >= 2 else "/"
+            print(f"HTTP: {method} {path}")
 
-            body = self._http_handler(method, path)
+            # Read POST body if Content-Length header is present
+            post_body = ""
+            if method == "POST":
+                headers_part = request.split(b"\r\n\r\n", 1)[0].decode()
+                content_length = 0
+                for line in headers_part.split("\r\n"):
+                    if line.lower().startswith("content-length:"):
+                        content_length = int(line.split(":", 1)[1].strip())
+                        break
+                print(f"HTTP: reading POST body ({content_length} bytes)")
+                if content_length > 0:
+                    # Some body bytes may already be in the buffer after headers
+                    body_so_far = request.split(b"\r\n\r\n", 1)[1]
+                    while len(body_so_far) < content_length:
+                        chunk = client.recv(512)
+                        if not chunk:
+                            break
+                        body_so_far += chunk
+                    post_body = body_so_far[:content_length].decode()
 
-            response = (
+            print("HTTP: calling handler...")
+            body = self._http_handler(method, path, post_body)
+            print(f"HTTP: handler returned {len(body)} bytes")
+
+            header = (
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/html\r\n"
                 f"Content-Length: {len(body)}\r\n"
                 "Connection: close\r\n"
-                "\r\n" + body
+                "\r\n"
             )
-            client.send(response.encode())
+            print("HTTP: sending headers...")
+            client.sendall(header.encode())
+            print("HTTP: sending body...")
+            client.sendall(body.encode())
+            print("HTTP: response sent")
         except Exception as e:
             print(f"HTTP error: {e}")
         finally:
