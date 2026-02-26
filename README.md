@@ -47,6 +47,7 @@ Whichever method you choose, you'll need the following infromation:
 - An API token from https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/
 - A station code from https://en.wikipedia.org/wiki/UK_railway_stations
 - Your WiFi credentials
+- Optional: A platform number to filter by
 
 #### Option A: WiFi
 
@@ -76,6 +77,7 @@ If you prefer, you can edit the config files directly on the Pico's filesystem o
 {
     "api_token": "<your-api-token>",
     "station_code": "<your-station-code>",
+    "platform": "<platform number/letter>",
     "station_name": "<your-station-name>",
     "show_splash_screens": true
 }

@@ -25,6 +25,7 @@ class PicoDepartureBoard:
     DARWIN_ENDPOINT = "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx"
     SETUP_SSID = f"PDBSetup-{unique_id().hex()[-4:]}"
     SETUP_PORT = 80
+    FETCH_NUM_ROWS = 10
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
     # noticable/jarring in the middle of the night if time has drifted slightly
@@ -46,6 +47,7 @@ class PicoDepartureBoard:
             [
                 "api_token",
                 "station_code",
+                "platform",
                 "station_name",
                 "show_splash_screens",
             ],
@@ -53,6 +55,7 @@ class PicoDepartureBoard:
         self.api_token = api_creds["api_token"]
         self.station_code = api_creds["station_code"].upper()
         self.station_name = api_creds["station_name"]
+        self.platform = api_creds["platform"]
         self.show_splash_screens = api_creds["show_splash_screens"]
 
         self.show_clock = True
@@ -255,9 +258,9 @@ class PicoDepartureBoard:
         time.sleep(5)
         self.oled.fill(self.oled.black)
 
-    def fetch_departures(self, num_rows=3):
+    def fetch_departures(self):
         print("Fetching departures from National Rail API")
-        body = self._build_departures_request(num_rows)
+        body = self._build_departures_request(self.FETCH_NUM_ROWS)
         headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
 
         try:
@@ -286,6 +289,9 @@ class PicoDepartureBoard:
             etd, _ = self._find_tag_value(block, "etd")
             platform, _ = self._find_tag_value(block, "platform")
             service_id, _ = self._find_tag_value(block, "serviceID")
+
+            if self.platform and platform != self.platform:
+                continue
 
             # Destination name is nested inside a destination > location block
             dest_name = None
