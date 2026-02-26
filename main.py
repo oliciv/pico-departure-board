@@ -4,8 +4,10 @@ import ntptime
 import time
 import gc
 from oled_lib import OLED_1inch3
-from machine import Pin
+from machine import Pin, unique_id
 import urequests
+from machine import reset
+from setup_portal import SetupPortal
 
 VERSION = "0.0.1"
 
@@ -21,6 +23,8 @@ class PicoDepartureBoard:
     API_TIMEOUT_SECONDS = 10
     ROTATE_SCREEN = False
     DARWIN_ENDPOINT = "https://lite.realtime.nationalrail.co.uk/OpenLDBWS/ldb12.asmx"
+    SETUP_SSID = f"PDBSetup-{unique_id().hex()[-4:]}"
+    SETUP_PORT = 80
 
     # Sync time at 02:00 UTC daily (after 01:00 BST changeover and hopefully less
     # noticable/jarring in the middle of the night if time has drifted slightly
@@ -38,13 +42,28 @@ class PicoDepartureBoard:
 
         # Load API credentials
         api_creds = self._load_json_config(
-            "api.json", ["api_token", "station_code", "station_name"]
+            "api.json",
+            [
+                "api_token",
+                "station_code",
+                "station_name",
+                "show_splash_screens",
+            ],
         )
         self.api_token = api_creds["api_token"]
         self.station_code = api_creds["station_code"].upper()
         self.station_name = api_creds["station_name"]
+        self.show_splash_screens = api_creds["show_splash_screens"]
 
         self.show_clock = True
+
+        self.buttons = {
+            "clock": Pin(15, Pin.IN, Pin.PULL_UP),
+            "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
+        }
+
+        if self.api_token == "" or self.station_code == "" or self.station_name == "":
+            self.start_setup_mode()
 
     def _load_json_config(self, filename, required_keys):
         try:
@@ -170,6 +189,9 @@ class PicoDepartureBoard:
     def show_boot_screen(self):
         # Dimensions: 128 x 64, so 127, 63 are the max values
 
+        if not self.show_splash_screens:
+            return
+
         self.oled.text("PDB", 5, 5, self.oled.white)
         self.oled.text(VERSION, 128 - 5 - len(VERSION) * 8, 64 - 10, self.oled.white)
 
@@ -226,13 +248,15 @@ class PicoDepartureBoard:
 
         self.sync_time()
 
-        self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
+        if not self.show_splash_screens:
+            return
 
+        self._show_message("Pico Departure", f"Board v{VERSION}", wlan.ifconfig()[0])
         time.sleep(5)
         self.oled.fill(self.oled.black)
 
     def fetch_departures(self, num_rows=3):
-        print("Fetching departures from Darwin")
+        print("Fetching departures from National Rail API")
         body = self._build_departures_request(num_rows)
         headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
 
@@ -530,7 +554,10 @@ class PicoDepartureBoard:
             print(f"Calling at: {self._calling_at_str}")
 
     def advance_calling_at(self):
-        """Advance the calling-at animation state. Returns True if display needs updating."""
+        """
+        Advance the calling-at animation state. Returns True if
+        display needs updating.
+        """
         if not self._calling_at_str:
             return False
 
@@ -566,6 +593,21 @@ class PicoDepartureBoard:
         # Show a 16-char window scrolling left through the string
         return self._calling_at_str[self._calling_at_scroll_offset :][:16]
 
+    def start_setup_mode(self):
+        self._show_message("Entering", "setup mode...")
+        gc.collect()
+        portal = SetupPortal(
+            ssid=self.SETUP_SSID,
+            port=self.SETUP_PORT,
+        )
+        self._show_message("Setup:Connect to", self.SETUP_SSID, "http://pdb.setup")
+        portal.start(
+            should_exit=lambda: any(pin.value() == 0 for pin in self.buttons.values())
+        )
+        self._show_message("Setup complete", "Restarting...")
+        time.sleep(3)
+        reset()
+
     def show_departure_board(self):
         print("Showing departure board")
 
@@ -583,13 +625,8 @@ class PicoDepartureBoard:
         self._calling_at_phase_start = time.ticks_ms()
         last_render = time.ticks_ms()
 
-        buttons = {
-            "clock": Pin(15, Pin.IN, Pin.PULL_UP),
-            "scroll": Pin(17, Pin.IN, Pin.PULL_UP),
-        }
-
         # Default state is pulled up, so 1 = not pressed
-        prev_state = {name: 1 for name in buttons}
+        prev_state = {name: 1 for name in self.buttons}
 
         while True:
             now = time.time()
@@ -633,7 +670,7 @@ class PicoDepartureBoard:
 
             # Read all buttons and detect change in state (pressed)
             pressed = {}
-            for name, pin in buttons.items():
+            for name, pin in self.buttons.items():
                 cur = pin.value()
                 pressed[name] = cur == 0 and prev_state[name] == 1
                 prev_state[name] = cur
@@ -648,6 +685,13 @@ class PicoDepartureBoard:
                     offset = 0
                 self.update_calling_points(services, offset)
                 self.render_departures(services, offset, self.get_calling_at_text())
+
+            # Both buttons held simultaneously -> enter setup mode
+            if (
+                self.buttons["clock"].value() == 0
+                and self.buttons["scroll"].value() == 0
+            ):
+                self.start_setup_mode()
 
             # Sleep to prevent the CPU from constantly spinning in a tight loop
             time.sleep_ms(50)
