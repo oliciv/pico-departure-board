@@ -428,8 +428,8 @@ class PicoDepartureBoard:
             return "{:02d}:{:02d}".format(hour, t[4])
 
     def _format_etd(self, etd, std):
-        # estimated: "On time", "Delayed", "+MM mins", or "HH:MM"
-        if etd not in (std, "On time") and all(":" in t for t in (etd, std)):
+        # API time can be "Delayed", "On Time", "Cancelled", "No report" or "HH:MM"
+        if etd not in (std, "On Time") and all(":" in t for t in (etd, std)):
             # convert HH:MM to minutes to display minutes delayed
             std_h, std_m = map(int, std.split(":"))
             etd_h, etd_m = map(int, etd.split(":"))
@@ -469,7 +469,14 @@ class PicoDepartureBoard:
         sleep_time = 60 - current_seconds
 
         for _ in range(5):
-            time.sleep(sleep_time)
+            # Poll for button presses during the sleep period
+            elapsed = 0
+            while elapsed < sleep_time:
+                if self._both_buttons_held():
+                    self.start_setup_mode()
+                time.sleep_ms(50)
+                elapsed += 0.05
+
             sleep_time = 60  # from now on, sleep for 60 subsequent seconds
             self.oled.fill_rect(1, 44, 128, 8, self.oled.black)
             self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
@@ -599,6 +606,11 @@ class PicoDepartureBoard:
         # Show a 16-char window scrolling left through the string
         return self._calling_at_str[self._calling_at_scroll_offset :][:16]
 
+    def _both_buttons_held(self):
+        return (
+            self.buttons["clock"].value() == 0 and self.buttons["scroll"].value() == 0
+        )
+
     def start_setup_mode(self):
         self._show_message("Entering", "setup mode...")
         gc.collect()
@@ -693,10 +705,7 @@ class PicoDepartureBoard:
                 self.render_departures(services, offset, self.get_calling_at_text())
 
             # Both buttons held simultaneously -> enter setup mode
-            if (
-                self.buttons["clock"].value() == 0
-                and self.buttons["scroll"].value() == 0
-            ):
+            if self._both_buttons_held():
                 self.start_setup_mode()
 
             # Sleep to prevent the CPU from constantly spinning in a tight loop
