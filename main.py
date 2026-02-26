@@ -428,8 +428,8 @@ class PicoDepartureBoard:
             return "{:02d}:{:02d}".format(hour, t[4])
 
     def _format_etd(self, etd, std):
-        # estimated: "On time", "Delayed", "+MM mins", or "HH:MM"
-        if etd not in (std, "On time") and all(":" in t for t in (etd, std)):
+        # API time can be "Delayed", "On Time", "Cancelled", "No report" or "HH:MM"
+        if etd not in (std, "On Time") and all(":" in t for t in (etd, std)):
             # convert HH:MM to minutes to display minutes delayed
             std_h, std_m = map(int, std.split(":"))
             etd_h, etd_m = map(int, etd.split(":"))
