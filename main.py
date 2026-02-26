@@ -469,7 +469,14 @@ class PicoDepartureBoard:
         sleep_time = 60 - current_seconds
 
         for _ in range(5):
-            time.sleep(sleep_time)
+            # Poll for button presses during the sleep period
+            elapsed = 0
+            while elapsed < sleep_time:
+                if self._both_buttons_held():
+                    self.start_setup_mode()
+                time.sleep_ms(50)
+                elapsed += 0.05
+
             sleep_time = 60  # from now on, sleep for 60 subsequent seconds
             self.oled.fill_rect(1, 44, 128, 8, self.oled.black)
             self.oled.text(self._get_current_time(), 1, 44, self.oled.white)
@@ -599,6 +606,11 @@ class PicoDepartureBoard:
         # Show a 16-char window scrolling left through the string
         return self._calling_at_str[self._calling_at_scroll_offset :][:16]
 
+    def _both_buttons_held(self):
+        return (
+            self.buttons["clock"].value() == 0 and self.buttons["scroll"].value() == 0
+        )
+
     def start_setup_mode(self):
         self._show_message("Entering", "setup mode...")
         gc.collect()
@@ -693,10 +705,7 @@ class PicoDepartureBoard:
                 self.render_departures(services, offset, self.get_calling_at_text())
 
             # Both buttons held simultaneously -> enter setup mode
-            if (
-                self.buttons["clock"].value() == 0
-                and self.buttons["scroll"].value() == 0
-            ):
+            if self._both_buttons_held():
                 self.start_setup_mode()
 
             # Sleep to prevent the CPU from constantly spinning in a tight loop
