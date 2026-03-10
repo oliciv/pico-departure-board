@@ -19,6 +19,10 @@ The screen has two buttons which are used for controls:
 - **"KEY1"**: Scroll through later departures
 - **Both buttons held**: Enter setup mode
 
+### Case
+
+I'm using [this 3D printed case from Printables](https://www.printables.com/model/925664-case-for-picow-and-oled-13-combination/files) by JayFabra, which holds the Pico and OLED HAT perfectly with cutouts for the buttons and power cable.
+
 ## Initial Setup
 
 
@@ -113,7 +117,6 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 
 ## Future ideas
 
-- It'll need a 3d printed case
 - It could be battery powered and portable or even wearable
 - Need to find a way to display calling stations
 - Limit to a specific platform, or destination(s)
