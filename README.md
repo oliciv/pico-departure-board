@@ -4,6 +4,8 @@
 
 This is a departure board for a train station, running on a Raspberry Pi Pico W with a Waveshare 1.3inch OLED HAT. There are many bigger departure boards in the world, this was a fun challenge to fit on a tiny screen. It's not perfect, but it works!
 
+![The Pico and screen in a 3d printed case with a 10p coin for scale](images/pico_case.jpg)
+
 ## Hardware
 
 - Raspberry Pi Pico WH (with pre-soldered headers)
