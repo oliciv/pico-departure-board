@@ -119,9 +119,6 @@ Even so, font size 8 is quite large, so we can only fit 14 characters per line. 
 - Limit to a specific platform, or destination(s)
 - It could still be smaller...
 - Better error handling!
-- ~~Onboard WiFi configuration without having to write a file to the Pico~~ Done! Captive portal setup mode.
-- ~~Onboard station configuration~~ Done!
-- ~~Onboard API configuration (Maybe press both buttons to enter this mode)~~ Done!
 - Demo mode (No internet connection required, show an example departure board with times based on the current time)
 
 ## Author
